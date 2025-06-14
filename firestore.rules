@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection
+    match /users/{userId} {
+      // Allow read/write access only to authenticated users accessing their own data
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Products collection
+    match /products/{productId} {
+      // Allow read access to all authenticated users
+      allow read: if request.auth != null;
+      // Only allow write access to administrators (you can implement admin role later)
+      allow write: if false; // For now, disable write access
+    }
+    
+    // Orders collection
+    match /orders/{orderId} {
+      // Allow read access to authenticated users who created the order
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow create access to authenticated users (they can only create orders for themselves)
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Prevent updates to orders (you can modify this later if needed)
+      allow update, delete: if false;
+    }
+  }
+} 
