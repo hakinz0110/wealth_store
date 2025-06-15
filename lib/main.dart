@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'dart:io' show Platform;
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/product_provider.dart';
@@ -21,27 +22,33 @@ import 'screens/profile_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'services/firebase_options.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase
+// Initialize Firebase with platform-specific configuration
+Future<void> _initializeFirebase() async {
   try {
     if (kIsWeb) {
-      // Web platform - Firebase is initialized with options from firebase_options.dart
-      // Check if Firebase is already initialized to prevent duplicate initialization
-      if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        );
-      }
-    } else {
-      // Mobile platform - Firebase is initialized from google-services.json
+      // Web platform
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
+    } else if (Platform.isAndroid) {
+      // Android platform
       await Firebase.initializeApp();
+    } else if (Platform.isIOS) {
+      // iOS platform
+      await Firebase.initializeApp();
+    } else {
+      // Unsupported platform
+      debugPrint('Firebase initialization not supported on this platform');
     }
     debugPrint('Firebase initialized successfully');
   } catch (e) {
     debugPrint('Error initializing Firebase: $e');
   }
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await _initializeFirebase();
 
   runApp(const MyApp());
 }
@@ -65,9 +72,9 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           return MaterialApp(
-        title: 'Wealth Store',
+            title: 'Wealth Store',
             theme: themeProvider.getTheme(),
-            home: const SplashScreen(),
+            home: const AuthWrapper(),
             routes: {
               '/splash': (context) => const SplashScreen(),
               '/main': (context) => const MainScreen(),
@@ -84,7 +91,7 @@ class MyApp extends StatelessWidget {
               }
               return null;
             },
-        debugShowCheckedModeBanner: false,
+            debugShowCheckedModeBanner: false,
           );
         },
       ),
@@ -101,12 +108,23 @@ class AuthWrapper extends StatelessWidget {
 
     // Show loading indicator while checking auth state
     if (authProvider.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading...'),
+            ],
+          ),
+        ),
+      );
     }
 
-    // If user is not logged in, show splash screen
+    // If user is not logged in, show splash screen or auth screen
     if (!authProvider.isLoggedIn) {
-      return const SplashScreen();
+      return const SplashScreen(); // Or AuthScreen if you prefer direct login
     }
 
     // If user is logged in, show main app
@@ -150,26 +168,26 @@ class _MainScreenState extends State<MainScreen> {
         }
       },
       child: Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        body: _screens[_selectedIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(
               icon: Icon(Icons.forum),
               label: 'Community',
             ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Cart',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        onTap: _onItemTapped,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart),
+              label: 'Cart',
+            ),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Theme.of(context).colorScheme.primary,
+          unselectedItemColor: Colors.grey,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          onTap: _onItemTapped,
         ),
       ),
     );

@@ -24,10 +24,16 @@ class ProductProvider with ChangeNotifier {
   }
 
   Future<void> fetchProducts() async {
-    _isLoading = true;
-    notifyListeners();
+    // Ensure we're not already loading
+    if (_isLoading) return;
 
     try {
+      // Set loading state before async operation
+      _isLoading = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+
       final snapshot = await _firestore.collection('products').get();
       _products = snapshot.docs.map((doc) {
         final productData = {'id': doc.id, ...doc.data()};
@@ -54,14 +60,23 @@ class ProductProvider with ChangeNotifier {
       }).toList();
 
       _applyFilters();
+
+      // Notify listeners after the operation is complete
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _isLoading = false;
+        notifyListeners();
+      });
     } catch (e) {
       debugPrint('Error fetching products: $e');
 
       // Create some dummy products with local assets if Firebase fetch fails
       _createDummyProducts();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+
+      // Notify listeners after the operation is complete
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _isLoading = false;
+        notifyListeners();
+      });
     }
   }
 
@@ -149,4 +164,10 @@ class ProductProvider with ChangeNotifier {
       return null;
     }
   }
+
+  // Placeholder for deal of the day
+  dynamic get dealOfTheDay => null;
+
+  // Placeholder for recently viewed products
+  List<ProductModel> get recentlyViewedProducts => [];
 }

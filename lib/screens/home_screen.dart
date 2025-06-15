@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../utils/responsive.dart';
 import '../providers/product_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
@@ -9,6 +10,7 @@ import '../providers/user_activity_provider.dart';
 import '../providers/deal_provider.dart';
 import '../models/review_model.dart';
 import '../models/product_model.dart';
+import '../models/deal_model.dart';
 import '../widgets/banner_carousel.dart';
 import '../widgets/category_item.dart';
 import '../widgets/product_card.dart';
@@ -34,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   String _selectedNavSection = 'featured';
 
-  // Sample banner data - in a real app, this would come from an API or database
+  // Sample banner data
   final List<BannerItem> banners = [
     BannerItem(
       title: 'New Collection',
@@ -80,39 +82,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void didChangeDependencies() {
-    if (_isInit) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Store context references before async operation
-      final productProviderRef = Provider.of<ProductProvider>(context);
-      final userActivityProviderRef = Provider.of<UserActivityProvider>(
-        context,
-        listen: false,
-      );
-      final dealProviderRef = Provider.of<DealProvider>(context, listen: false);
-
-      // Fetch products
-      productProviderRef.fetchProducts().then((_) {
-        // Check if the widget is still mounted before using setState
-        if (!mounted) return;
-
-        // Load user activity data
-        userActivityProviderRef.loadRecentlyViewedProducts(productProviderRef);
-        userActivityProviderRef.generateRecommendations(productProviderRef);
-
-        // Generate deal of the day
-        dealProviderRef.generateDealOfTheDay(productProviderRef);
-
-        setState(() {
-          _isLoading = false;
-        });
-      });
-
-      _isInit = false;
-    }
     super.didChangeDependencies();
+    final productProvider = Provider.of<ProductProvider>(
+      context,
+      listen: false,
+    );
+
+    // Only fetch products if they haven't been loaded yet
+    if (productProvider.products.isEmpty) {
+      productProvider.fetchProducts();
+    }
   }
 
   // Filter products based on selected filter
@@ -123,48 +102,62 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final productProvider = Provider.of<ProductProvider>(context);
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final favoritesProvider = Provider.of<FavoritesProvider>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final userActivityProvider = Provider.of<UserActivityProvider>(context);
-    final dealProvider = Provider.of<DealProvider>(context);
-
-    // Get all products
-    final products = productProvider.products;
-
-    // Get filtered products
-    final filteredProducts = _getFilteredProducts(products);
-
-    // Get recently viewed products
-    final recentlyViewedProducts = userActivityProvider.recentlyViewedProducts;
-
-    // Get deal of the day
-    final dealOfTheDay = dealProvider.dealOfTheDay;
-
-    // Get new arrivals (in a real app, these would be sorted by date)
-    final newArrivals = List<ProductModel>.from(products)..shuffle();
-    newArrivals.length = newArrivals.length > 5 ? 5 : newArrivals.length;
-
-    // Get sample reviews
-    final reviews = ReviewModel.getDummyReviews();
-
-    // Get user's first name from full name
-    final firstName = authProvider.user?.name.split(' ').first ?? 'Guest';
-
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // App bar with logo, search, and toggle theme
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      appBar: AppBar(title: const Text('Wealth Store'), centerTitle: true),
+      body: Consumer<ProductProvider>(
+        builder: (context, productProvider, child) {
+          // Handle different states
+          if (productProvider.isLoading) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo/App name
-                  Row(
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading products...'),
+                ],
+              ),
+            );
+          }
+
+          // Check if products list is empty
+          if (productProvider.products.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 60),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No products found',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      productProvider.fetchProducts();
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Main content
+          return RefreshIndicator(
+            onRefresh: () async {
+              await productProvider.fetchProducts();
+            },
+            child: CustomScrollView(
+              slivers: [
+                // Adaptive App Bar
+                SliverAppBar(
+                  floating: true,
+                  pinned: true,
+                  snap: false,
+                  centerTitle: false,
+                  title: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
@@ -178,356 +171,162 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         'Wealth Store',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: Responsive.responsiveFontSize(context, 20),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const SearchScreen(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
 
-                  // Search and theme toggle
-                  Row(
-                    children: [
-                      // Search button
-                      Material(
-                        color: Colors.transparent,
-                        child: IconButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const SearchScreen(),
+                // Responsive Sections
+                SliverPadding(
+                  padding: Responsive.responsivePadding(context),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Adaptive Banner Carousel
+                      AspectRatio(
+                        aspectRatio: Responsive.getResponsiveValue(
+                          context: context,
+                          mobile: 16 / 9,
+                          tablet: 21 / 9,
+                          desktop: 25 / 9,
+                        ),
+                        child: BannerCarousel(
+                          banners: banners,
+                          onBannerTap: (index) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Banner ${index + 1} tapped'),
+                                duration: const Duration(seconds: 1),
                               ),
                             );
                           },
-                          icon: const Icon(Icons.search),
-                          tooltip: 'Search',
                         ),
                       ),
 
-                      // Theme toggle
-                      Material(
-                        color: Colors.transparent,
-                        child: IconButton(
-                          onPressed: () {
-                            themeProvider.toggleTheme();
-                          },
-                          icon: Icon(
-                            themeProvider.isDarkMode
-                                ? Icons.light_mode
-                                : Icons.dark_mode,
-                          ),
-                          tooltip: themeProvider.isDarkMode
-                              ? 'Switch to Light Mode'
-                              : 'Switch to Dark Mode',
-                        ),
-                      ),
-                    ],
+                      // Categories Section
+                      _buildCategoriesSection(context),
+
+                      // Placeholder for Deal of the Day
+                      const SizedBox(height: 16),
+
+                      // Recently Viewed Section
+                      const SizedBox(
+                        height: 16,
+                      ), // Add a spacer instead of the section
+                    ]),
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            // Main content
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  await productProvider.fetchProducts();
-                  userActivityProvider.loadRecentlyViewedProducts(
-                    productProvider,
-                  );
-                  userActivityProvider.generateRecommendations(productProvider);
-                  dealProvider.generateDealOfTheDay(productProvider);
-                },
-                child: _isLoading
-                    ? const SkeletonLoading(height: 200)
-                    : ListView(
-                        children: [
-                          // Welcome message
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome back, $firstName!',
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Discover the latest products just for you',
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey.shade300
-                                        : Colors.grey.shade700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // Banner carousel
-                          BannerCarousel(
-                            banners: banners,
-                            height: 180,
-                            onBannerTap: (index) {
-                              // Handle banner tap
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Banner ${index + 1} tapped'),
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Categories
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Categories',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  height: 100,
-                                  child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: categories.length,
-                                    itemBuilder: (context, index) {
-                                      return CategoryItem(
-                                        name: categories[index]['name'],
-                                        icon: categories[index]['icon'],
-                                        onTap: () {
-                                          // Handle category tap
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                '${categories[index]['name']} category tapped',
-                                              ),
-                                              duration: const Duration(
-                                                seconds: 1,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Quick filter bar
-                          QuickFilterBar(
-                            options: [],
-                            selectedValue: '',
-                            onFilterSelected: (filter) {
-                              // Handle filter selection
-                            },
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Deal of the day
-                          if (dealOfTheDay != null)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Row(
-                                    children: [
-                                      Icon(
-                                        Icons.local_fire_department,
-                                        color: Colors.orange,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Deal of the Day',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  DealOfDayCard(
-                                    deal: dealOfTheDay,
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ProductDetailScreen(
-                                                product: dealOfTheDay.product,
-                                              ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                          const SizedBox(height: 24),
-
-                          // Sticky header navigation
-                          StickyHeaderNav(
-                            items: navItems,
-                            selectedId: _selectedNavSection,
-                            onItemSelected: (section) {
-                              setState(() {
-                                _selectedNavSection = section;
-                              });
-                            },
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Display different sections based on selected nav
-                          if (_selectedNavSection == 'featured')
-                            _buildFeaturedProductsGrid(
-                              filteredProducts,
-                              cartProvider,
-                              favoritesProvider,
-                              context,
-                            ),
-
-                          const SizedBox(height: 24),
-
-                          // Recently viewed products
-                          if (recentlyViewedProducts.isNotEmpty)
-                            RecentlyViewedSection(
-                              products: List<ProductModel>.from(
-                                recentlyViewedProducts,
-                              ),
-                              onProductTap: (product) {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        ProductDetailScreen(product: product),
-                                  ),
-                                );
-                              },
-                              isLoading: false,
-                            ),
-
-                          const SizedBox(height: 24),
-
-                          // Customer reviews
-                          ReviewsSection(
-                            reviews: reviews,
-                            onSeeAllTap: () {
-                              // Navigate to all reviews
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('See all reviews tapped'),
-                                  duration: Duration(seconds: 1),
-                                ),
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 24),
-                        ],
+                // Adaptive Product Grid
+                SliverPadding(
+                  padding: Responsive.responsivePadding(context),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: Responsive.getGridColumnCount(context),
+                      childAspectRatio: Responsive.getResponsiveValue(
+                        context: context,
+                        mobile: 0.7,
+                        tablet: 0.8,
+                        desktop: 0.9,
                       ),
-              ),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final products = productProvider.products;
+                      final product = products[index];
+                      return ProductCard(
+                        product: product,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ProductDetailScreen(product: product),
+                          ),
+                        ),
+                        onAddToCart: () {
+                          Provider.of<CartProvider>(
+                            context,
+                            listen: false,
+                          ).addItem(product);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${product.name} added to cart'),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        onAddToWishlist: () {
+                          Provider.of<FavoritesProvider>(
+                            context,
+                            listen: false,
+                          ).toggleFavorite(product);
+                        },
+                        isInWishlist: Provider.of<FavoritesProvider>(
+                          context,
+                          listen: false,
+                        ).isFavorite(product),
+                      );
+                    }, childCount: productProvider.products.length),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildFeaturedProductsGrid(
-    List<ProductModel> products,
-    CartProvider cartProvider,
-    FavoritesProvider favoritesProvider,
-    BuildContext context,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Featured Products',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: products.length > 6 ? 6 : products.length,
-            itemBuilder: (context, index) {
-              final product = products[index];
-              return ProductCard(
-                product: product,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ProductDetailScreen(product: product),
-                    ),
-                  );
-                },
-                onAddToCart: () {
-                  cartProvider.addItem(product);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${product.name} added to cart'),
-                      duration: const Duration(seconds: 1),
-                      action: SnackBarAction(
-                        label: 'View Cart',
-                        onPressed: () {
-                          // Navigate to cart screen
-                        },
-                      ),
-                    ),
-                  );
-                },
-                onAddToWishlist: () {
-                  favoritesProvider.toggleFavorite(product);
-                },
-                isInWishlist: favoritesProvider.isFavorite(product),
+  // Categories Section with Responsive Layout
+  Widget _buildCategoriesSection(BuildContext context) {
+    final categories = [
+      {'name': 'Computers', 'icon': Icons.computer},
+      {'name': 'Phones', 'icon': Icons.phone_android},
+      {'name': 'Headphones', 'icon': Icons.headphones},
+      {'name': 'Gaming', 'icon': Icons.sports_esports},
+      {'name': 'Cameras', 'icon': Icons.camera_alt},
+      {'name': 'Smart Home', 'icon': Icons.home},
+    ];
+
+    return SizedBox(
+      height: Responsive.getResponsiveValue(
+        context: context,
+        mobile: 100,
+        tablet: 120,
+        desktop: 140,
+      ),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        itemBuilder: (context, index) {
+          return CategoryItem(
+            name: categories[index]['name'] as String,
+            icon: categories[index]['icon'] as IconData,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${categories[index]['name']} category tapped'),
+                  duration: const Duration(seconds: 1),
+                ),
               );
             },
-          ),
-        ],
+          );
+        },
       ),
     );
   }
