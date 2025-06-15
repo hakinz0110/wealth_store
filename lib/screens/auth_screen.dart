@@ -973,7 +973,7 @@ class _RegisterFormState extends State<RegisterForm> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
+                  ),
                 ],
               ),
             ),

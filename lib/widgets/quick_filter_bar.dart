@@ -8,91 +8,22 @@ class FilterOption {
   FilterOption({required this.label, required this.value, this.icon});
 }
 
-class QuickFilterBar extends StatefulWidget {
+class QuickFilterBar extends StatelessWidget {
   final List<FilterOption> options;
-  final Function(String) onFilterSelected;
   final String selectedValue;
+  final Function(String) onFilterSelected;
 
   const QuickFilterBar({
     super.key,
-    required this.options,
+    this.options = const [],
+    this.selectedValue = '',
     required this.onFilterSelected,
-    required this.selectedValue,
   });
 
   @override
-  State<QuickFilterBar> createState() => _QuickFilterBarState();
-}
-
-class _QuickFilterBarState extends State<QuickFilterBar> {
-  @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: widget.options.length,
-        itemBuilder: (context, index) {
-          final option = widget.options[index];
-          final isSelected = option.value == widget.selectedValue;
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Material(
-              color: isSelected
-                  ? Theme.of(context).primaryColor
-                  : isDarkMode
-                  ? Colors.grey.shade800
-                  : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(25),
-              child: InkWell(
-                onTap: () => widget.onFilterSelected(option.value),
-                borderRadius: BorderRadius.circular(25),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (option.icon != null) ...[
-                        Icon(
-                          option.icon,
-                          size: 16,
-                          color: isSelected
-                              ? Colors.white
-                              : isDarkMode
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Text(
-                        option.label,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: isSelected
-                              ? Colors.white
-                              : isDarkMode
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
+    // Return an empty container if no options
+    return Container();
   }
 }
 

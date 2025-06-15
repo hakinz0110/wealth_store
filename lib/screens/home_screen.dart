@@ -14,11 +14,8 @@ import '../widgets/category_item.dart';
 import '../widgets/product_card.dart';
 import '../widgets/deal_of_day_card.dart';
 import '../widgets/recently_viewed_section.dart';
-import '../widgets/recommended_section.dart';
-import '../widgets/seasonal_collection.dart';
 import '../widgets/reviews_section.dart';
 import '../widgets/quick_filter_bar.dart';
-import '../widgets/new_arrivals_section.dart';
 import '../widgets/sticky_header_nav.dart';
 import '../widgets/skeleton_loading.dart';
 
@@ -35,7 +32,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isInit = true;
   bool _isLoading = true;
-  String _selectedFilter = 'all';
   String _selectedNavSection = 'featured';
 
   // Sample banner data - in a real app, this would come from an API or database
@@ -73,24 +69,6 @@ class _HomeScreenState extends State<HomeScreen> {
     {'name': 'Smart Home', 'icon': Icons.home},
   ];
 
-  // Filter options
-  final List<FilterOption> filterOptions = [
-    FilterOption(label: 'All', value: 'all', icon: Icons.apps),
-    FilterOption(label: 'Popular', value: 'popular', icon: Icons.trending_up),
-    FilterOption(label: 'Newest', value: 'newest', icon: Icons.new_releases),
-    FilterOption(
-      label: 'Price: Low to High',
-      value: 'price_asc',
-      icon: Icons.arrow_upward,
-    ),
-    FilterOption(
-      label: 'Price: High to Low',
-      value: 'price_desc',
-      icon: Icons.arrow_downward,
-    ),
-    FilterOption(label: 'Rating', value: 'rating', icon: Icons.star),
-  ];
-
   // Navigation sections
   final List<NavItem> navItems = [
     NavItem(label: 'Featured', icon: Icons.star, id: 'featured'),
@@ -107,24 +85,25 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = true;
       });
 
+      // Store context references before async operation
+      final productProviderRef = Provider.of<ProductProvider>(context);
+      final userActivityProviderRef = Provider.of<UserActivityProvider>(
+        context,
+        listen: false,
+      );
+      final dealProviderRef = Provider.of<DealProvider>(context, listen: false);
+
       // Fetch products
-      Provider.of<ProductProvider>(context).fetchProducts().then((_) {
-        final productProvider = Provider.of<ProductProvider>(
-          context,
-          listen: false,
-        );
-        final userActivityProvider = Provider.of<UserActivityProvider>(
-          context,
-          listen: false,
-        );
-        final dealProvider = Provider.of<DealProvider>(context, listen: false);
+      productProviderRef.fetchProducts().then((_) {
+        // Check if the widget is still mounted before using setState
+        if (!mounted) return;
 
         // Load user activity data
-        userActivityProvider.loadRecentlyViewedProducts(productProvider);
-        userActivityProvider.generateRecommendations(productProvider);
+        userActivityProviderRef.loadRecentlyViewedProducts(productProviderRef);
+        userActivityProviderRef.generateRecommendations(productProviderRef);
 
         // Generate deal of the day
-        dealProvider.generateDealOfTheDay(productProvider);
+        dealProviderRef.generateDealOfTheDay(productProviderRef);
 
         setState(() {
           _isLoading = false;
@@ -137,32 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Filter products based on selected filter
-  List<dynamic> _getFilteredProducts(List<dynamic> products) {
-    final List<dynamic> filteredProducts = List.from(products);
-
-    switch (_selectedFilter) {
-      case 'popular':
-        filteredProducts.sort((a, b) => b.rating.compareTo(a.rating));
-        break;
-      case 'newest':
-        // In a real app, you would sort by date added
-        filteredProducts.shuffle();
-        break;
-      case 'price_asc':
-        filteredProducts.sort((a, b) => a.price.compareTo(b.price));
-        break;
-      case 'price_desc':
-        filteredProducts.sort((a, b) => b.price.compareTo(a.price));
-        break;
-      case 'rating':
-        filteredProducts.sort((a, b) => b.rating.compareTo(a.rating));
-        break;
-      default:
-        // 'all' - keep original order or shuffle
-        filteredProducts.shuffle();
-    }
-
-    return filteredProducts;
+  List<ProductModel> _getFilteredProducts(List<ProductModel> products) {
+    // Simply return the original list without filtering
+    return products;
   }
 
   @override
@@ -184,160 +140,88 @@ class _HomeScreenState extends State<HomeScreen> {
     // Get recently viewed products
     final recentlyViewedProducts = userActivityProvider.recentlyViewedProducts;
 
-    // Get recommended products
-    final recommendedProducts = userActivityProvider.recommendedProducts;
-
     // Get deal of the day
     final dealOfTheDay = dealProvider.dealOfTheDay;
 
     // Get new arrivals (in a real app, these would be sorted by date)
-    final newArrivals = List.from(products)..shuffle();
+    final newArrivals = List<ProductModel>.from(products)..shuffle();
     newArrivals.length = newArrivals.length > 5 ? 5 : newArrivals.length;
 
     // Get sample reviews
     final reviews = ReviewModel.getDummyReviews();
 
     // Get user's first name from full name
-    String firstName = 'User';
-    if (authProvider.user != null && authProvider.user!.name.isNotEmpty) {
-      firstName = authProvider.user!.name.split(' ')[0];
-    }
-
-    final isDarkMode = themeProvider.isDarkMode;
+    final firstName = authProvider.user?.name.split(' ').first ?? 'Guest';
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with welcome message, theme toggle, wishlist and search icons
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).appBarTheme.backgroundColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(13),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
+            // App bar with logo, search, and toggle theme
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Welcome message
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // Logo/App name
+                  Row(
                     children: [
-                      Text(
-                        'Welcome Back',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDarkMode
-                              ? Colors.grey.shade400
-                              : Colors.grey,
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.shopping_bag_outlined,
+                          color: Colors.white,
                         ),
                       ),
-                      Text(
-                        firstName,
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Wealth Store',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : Colors.black,
                         ),
                       ),
                     ],
                   ),
-                  // Icons
+
+                  // Search and theme toggle
                   Row(
                     children: [
-                      // Dark mode toggle
+                      // Search button
                       Material(
                         color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            themeProvider.toggleTheme();
-                          },
-                          borderRadius: BorderRadius.circular(30),
-                          splashColor: Theme.of(
-                            context,
-                          ).primaryColor.withAlpha(26),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Icon(
-                              isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                              color: isDarkMode
-                                  ? Colors.white
-                                  : Colors.grey.shade800,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Favorites icon
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            // Navigate to favorites screen
-                            Navigator.of(context).pushNamed('/favorites');
-                          },
-                          borderRadius: BorderRadius.circular(30),
-                          splashColor: Theme.of(
-                            context,
-                          ).primaryColor.withAlpha(26),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Stack(
-                              alignment: Alignment.topRight,
-                              children: [
-                                Icon(
-                                  Icons.favorite_border,
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.grey.shade800,
-                                ),
-                                if (favoritesProvider.favorites.isNotEmpty)
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.red,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Search icon
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            // Navigate to search screen
+                        child: IconButton(
+                          onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (context) => const SearchScreen(),
                               ),
                             );
                           },
-                          borderRadius: BorderRadius.circular(30),
-                          splashColor: Theme.of(
-                            context,
-                          ).primaryColor.withAlpha(26),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Icon(
-                              Icons.search,
-                              color: isDarkMode
-                                  ? Colors.white
-                                  : Colors.grey.shade800,
-                            ),
+                          icon: const Icon(Icons.search),
+                          tooltip: 'Search',
+                        ),
+                      ),
+
+                      // Theme toggle
+                      Material(
+                        color: Colors.transparent,
+                        child: IconButton(
+                          onPressed: () {
+                            themeProvider.toggleTheme();
+                          },
+                          icon: Icon(
+                            themeProvider.isDarkMode
+                                ? Icons.light_mode
+                                : Icons.dark_mode,
                           ),
+                          tooltip: themeProvider.isDarkMode
+                              ? 'Switch to Light Mode'
+                              : 'Switch to Dark Mode',
                         ),
                       ),
                     ],
@@ -346,411 +230,305 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Sticky header navigation
-            StickyHeaderNav(
-              items: navItems,
-              onItemSelected: (id) {
-                setState(() {
-                  _selectedNavSection = id;
-                });
-              },
-              selectedId: _selectedNavSection,
-            ),
-
-            // Main content - scrollable with pull-to-refresh
+            // Main content
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
-                  setState(() {
-                    _isLoading = true;
-                  });
-
                   await productProvider.fetchProducts();
-
-                  final userActivityProvider =
-                      Provider.of<UserActivityProvider>(context, listen: false);
-                  final dealProvider = Provider.of<DealProvider>(
-                    context,
-                    listen: false,
-                  );
-
-                  // Refresh user activity data
-                  await userActivityProvider.loadRecentlyViewedProducts(
+                  userActivityProvider.loadRecentlyViewedProducts(
                     productProvider,
                   );
-                  await userActivityProvider.generateRecommendations(
-                    productProvider,
-                  );
-
-                  // Regenerate deal of the day
-                  await dealProvider.generateDealOfTheDay(productProvider);
-
-                  setState(() {
-                    _isLoading = false;
-                  });
+                  userActivityProvider.generateRecommendations(productProvider);
+                  dealProvider.generateDealOfTheDay(productProvider);
                 },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Banner carousel
-                      BannerCarousel(banners: banners),
-
-                      const SizedBox(height: 16),
-
-                      // Deal of the day
-                      if (_isLoading)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 8.0,
-                          ),
-                          child: SkeletonLoading(height: 180, borderRadius: 16),
-                        )
-                      else if (dealOfTheDay != null)
-                        DealOfDayCard(
-                          deal: dealOfTheDay,
-                          onTap: () {
-                            // Navigate to product details
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProductDetailScreen(
-                                  product: dealOfTheDay.product,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-                      const SizedBox(height: 16),
-
-                      // Recently viewed products
-                      if (recentlyViewedProducts.isNotEmpty || _isLoading)
-                        RecentlyViewedSection(
-                          products: recentlyViewedProducts,
-                          onProductTap: (product) {
-                            // Track product view
-                            userActivityProvider.trackProductView(product);
-
-                            // Navigate to product details
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ProductDetailScreen(product: product),
-                              ),
-                            );
-                          },
-                          isLoading: _isLoading,
-                        ),
-
-                      const SizedBox(height: 16),
-
-                      // Seasonal collection
-                      SeasonalCollection.getCurrentSeason(
-                        onTap: () {
-                          // Navigate to seasonal collection
-                        },
-                        isLoading: _isLoading,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Recommended products
-                      if (recommendedProducts.isNotEmpty || _isLoading)
-                        RecommendedSection(
-                          products: recommendedProducts,
-                          onProductTap: (product) {
-                            // Track product view
-                            userActivityProvider.trackProductView(product);
-
-                            // Navigate to product details
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ProductDetailScreen(product: product),
-                              ),
-                            );
-                          },
-                          onAddToCart: (product) {
-                            cartProvider.addItem(product);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${product.name} added to cart'),
-                                duration: const Duration(seconds: 1),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                margin: const EdgeInsets.fromLTRB(
-                                  16,
-                                  0,
-                                  16,
-                                  16,
-                                ),
-                              ),
-                            );
-                          },
-                          onAddToWishlist: (product) {
-                            favoritesProvider.toggleFavorite(product);
-                          },
-                          isInWishlist: (product) =>
-                              favoritesProvider.isFavorite(product),
-                          isLoading: _isLoading,
-                        ),
-
-                      const SizedBox(height: 16),
-
-                      // New arrivals
-                      NewArrivalsSection(
-                        products: newArrivals.cast<ProductModel>(),
-                        onProductTap: (product) {
-                          // Track product view
-                          userActivityProvider.trackProductView(product);
-
-                          // Navigate to product details
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ProductDetailScreen(product: product),
+                child: _isLoading
+                    ? const SkeletonLoading(height: 200)
+                    : ListView(
+                        children: [
+                          // Welcome message
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                          );
-                        },
-                        isLoading: _isLoading,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Customer reviews
-                      ReviewsSection(
-                        reviews: reviews,
-                        onSeeAllTap: () {
-                          // Navigate to all reviews
-                        },
-                        isLoading: _isLoading,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Categories section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Categories',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                // Navigate to categories screen
-                              },
-                              child: const Text('See All'),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Categories horizontal list
-                      SizedBox(
-                        height: 90,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          itemCount: categories.length,
-                          itemBuilder: (ctx, index) {
-                            final category = categories[index];
-                            final isSelected =
-                                category['name'] ==
-                                productProvider.selectedCategory;
-
-                            return CategoryItem(
-                              name: category['name'],
-                              icon: category['icon'],
-                              isSelected: isSelected,
-                              onTap: () {
-                                productProvider.setCategory(category['name']);
-                              },
-                            );
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Quick filter bar
-                      QuickFilterBar(
-                        options: filterOptions,
-                        onFilterSelected: (value) {
-                          setState(() {
-                            _selectedFilter = value;
-                          });
-                        },
-                        selectedValue: _selectedFilter,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // All Products section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'All Products',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                // Navigate to all products screen
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => const SearchScreen(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Welcome back, $firstName!',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                );
-                              },
-                              child: const Text('See All'),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Discover the latest products just for you',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey.shade300
+                                        : Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
 
-                      // Products grid
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: _isLoading
-                            ? GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      childAspectRatio: 0.55,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                    ),
-                                itemCount: 4,
-                                itemBuilder: (ctx, index) {
-                                  return const ProductCardSkeleton();
-                                },
-                              )
-                            : products.isEmpty
-                            ? const Center(child: Text('No products found'))
-                            : GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      childAspectRatio: 0.55,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                    ),
-                                itemCount: filteredProducts.length,
-                                itemBuilder: (ctx, index) {
-                                  final product = filteredProducts[index];
-                                  final isInWishlist = favoritesProvider
-                                      .isFavorite(product);
+                          const SizedBox(height: 8),
 
-                                  return ProductCard(
-                                    product: product,
-                                    onTap: () {
-                                      // Track product view
-                                      userActivityProvider.trackProductView(
-                                        product,
+                          // Banner carousel
+                          BannerCarousel(
+                            banners: banners,
+                            height: 180,
+                            onBannerTap: (index) {
+                              // Handle banner tap
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Banner ${index + 1} tapped'),
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Categories
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Categories',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: 100,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: categories.length,
+                                    itemBuilder: (context, index) {
+                                      return CategoryItem(
+                                        name: categories[index]['name'],
+                                        icon: categories[index]['icon'],
+                                        onTap: () {
+                                          // Handle category tap
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '${categories[index]['name']} category tapped',
+                                              ),
+                                              duration: const Duration(
+                                                seconds: 1,
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
 
-                                      // Navigate to product details
-                                      Navigator.push(
-                                        context,
+                          const SizedBox(height: 24),
+
+                          // Quick filter bar
+                          QuickFilterBar(
+                            options: [],
+                            selectedValue: '',
+                            onFilterSelected: (filter) {
+                              // Handle filter selection
+                            },
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Deal of the day
+                          if (dealOfTheDay != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.local_fire_department,
+                                        color: Colors.orange,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Deal of the Day',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  DealOfDayCard(
+                                    deal: dealOfTheDay,
+                                    onTap: () {
+                                      Navigator.of(context).push(
                                         MaterialPageRoute(
                                           builder: (context) =>
                                               ProductDetailScreen(
-                                                product: product,
+                                                product: dealOfTheDay.product,
                                               ),
                                         ),
                                       );
                                     },
-                                    onAddToCart: () {
-                                      cartProvider.addItem(product);
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            '${product.name} added to cart',
-                                          ),
-                                          duration: const Duration(seconds: 1),
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          margin: const EdgeInsets.fromLTRB(
-                                            16,
-                                            0,
-                                            16,
-                                            16,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    onAddToWishlist: () {
-                                      favoritesProvider.toggleFavorite(product);
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            isInWishlist
-                                                ? '${product.name} removed from favorites'
-                                                : '${product.name} added to favorites',
-                                          ),
-                                          duration: const Duration(seconds: 1),
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          margin: const EdgeInsets.fromLTRB(
-                                            16,
-                                            0,
-                                            16,
-                                            16,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    isInWishlist: isInWishlist,
-                                  );
-                                },
+                                  ),
+                                ],
                               ),
-                      ),
+                            ),
 
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
+                          const SizedBox(height: 24),
+
+                          // Sticky header navigation
+                          StickyHeaderNav(
+                            items: navItems,
+                            selectedId: _selectedNavSection,
+                            onItemSelected: (section) {
+                              setState(() {
+                                _selectedNavSection = section;
+                              });
+                            },
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Display different sections based on selected nav
+                          if (_selectedNavSection == 'featured')
+                            _buildFeaturedProductsGrid(
+                              filteredProducts,
+                              cartProvider,
+                              favoritesProvider,
+                              context,
+                            ),
+
+                          const SizedBox(height: 24),
+
+                          // Recently viewed products
+                          if (recentlyViewedProducts.isNotEmpty)
+                            RecentlyViewedSection(
+                              products: List<ProductModel>.from(
+                                recentlyViewedProducts,
+                              ),
+                              onProductTap: (product) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ProductDetailScreen(product: product),
+                                  ),
+                                );
+                              },
+                              isLoading: false,
+                            ),
+
+                          const SizedBox(height: 24),
+
+                          // Customer reviews
+                          ReviewsSection(
+                            reviews: reviews,
+                            onSeeAllTap: () {
+                              // Navigate to all reviews
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('See all reviews tapped'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 24),
+                        ],
+                      ),
               ),
             ),
           ],
         ),
       ),
-      // Bottom navigation bar is handled by the MainScreen widget in main.dart
+    );
+  }
+
+  Widget _buildFeaturedProductsGrid(
+    List<ProductModel> products,
+    CartProvider cartProvider,
+    FavoritesProvider favoritesProvider,
+    BuildContext context,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Featured Products',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.7,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: products.length > 6 ? 6 : products.length,
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return ProductCard(
+                product: product,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ProductDetailScreen(product: product),
+                    ),
+                  );
+                },
+                onAddToCart: () {
+                  cartProvider.addItem(product);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${product.name} added to cart'),
+                      duration: const Duration(seconds: 1),
+                      action: SnackBarAction(
+                        label: 'View Cart',
+                        onPressed: () {
+                          // Navigate to cart screen
+                        },
+                      ),
+                    ),
+                  );
+                },
+                onAddToWishlist: () {
+                  favoritesProvider.toggleFavorite(product);
+                },
+                isInWishlist: favoritesProvider.isFavorite(product),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

@@ -20,44 +20,86 @@ class BannerItem {
 class BannerCarousel extends StatefulWidget {
   final List<BannerItem> banners;
   final double height;
+  final Function(int) onBannerTap;
 
-  const BannerCarousel({super.key, required this.banners, this.height = 220});
+  const BannerCarousel({
+    super.key,
+    required this.banners,
+    this.height = 180,
+    required this.onBannerTap,
+  });
 
   @override
   State<BannerCarousel> createState() => _BannerCarouselState();
 }
 
-class _BannerCarouselState extends State<BannerCarousel> {
-  int _currentIndex = 0;
+class _BannerCarouselState extends State<BannerCarousel>
+    with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
+  int _currentPage = 0;
   Timer? _timer;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _startAutoScroll();
+
+    // Set up animation controller
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0.0, 0.25), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
+
+    _animationController.forward();
+
+    // Auto-scroll timer
+    _startTimer();
+
+    // Listen for page changes
+    _pageController.addListener(() {
+      int next = _pageController.page!.round();
+      if (_currentPage != next) {
+        setState(() {
+          _currentPage = next;
+        });
+        _animationController.reset();
+        _animationController.forward();
+      }
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     _pageController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
-  void _startAutoScroll() {
-    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (_currentIndex < widget.banners.length - 1) {
-        _currentIndex++;
-      } else {
-        _currentIndex = 0;
-      }
-
-      if (_pageController.hasClients) {
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_currentPage < widget.banners.length - 1) {
         _pageController.animateToPage(
-          _currentIndex,
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeIn,
+          _currentPage + 1,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
         );
       }
     });
@@ -65,46 +107,180 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         SizedBox(
           height: widget.height,
           child: PageView.builder(
             controller: _pageController,
+            itemCount: widget.banners.length,
             onPageChanged: (index) {
               setState(() {
-                _currentIndex = index;
+                _currentPage = index;
               });
             },
-            itemCount: widget.banners.length,
             itemBuilder: (context, index) {
-              return _buildBanner(widget.banners[index]);
+              final banner = widget.banners[index];
+              return GestureDetector(
+                onTap: () => widget.onBannerTap(index),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        banner.backgroundColor,
+                        banner.backgroundColor.withAlpha(220),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: banner.backgroundColor.withAlpha(100),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Stack(
+                      children: [
+                        // Background pattern
+                        Positioned.fill(
+                          child: Opacity(
+                            opacity: 0.1,
+                            child: CustomPaint(
+                              painter: PatternPainter(isDarkMode),
+                            ),
+                          ),
+                        ),
+
+                        // Content
+                        Row(
+                          children: [
+                            // Text content
+                            Expanded(
+                              flex: 3,
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    return FadeTransition(
+                                      opacity: _fadeAnimation,
+                                      child: SlideTransition(
+                                        position: _slideAnimation,
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        banner.title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        banner.description,
+                                        style: TextStyle(
+                                          color: Colors.white.withAlpha(220),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            widget.onBannerTap(index),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor:
+                                              banner.backgroundColor,
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                            vertical: 12,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          banner.buttonText,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Image
+                            Expanded(
+                              flex: 2,
+                              child: Hero(
+                                tag: 'banner_image_$index',
+                                child: Image.asset(
+                                  banner.imageUrl,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Center(
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        color: Colors.white54,
+                                        size: 40,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
             },
           ),
         ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            widget.banners.length,
-            (index) => GestureDetector(
-              onTap: () {
-                _pageController.animateToPage(
-                  index,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                width: _currentIndex == index ? 16 : 8,
+
+        // Indicator dots
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              widget.banners.length,
+              (index) => AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
                 height: 8,
+                width: _currentPage == index ? 24 : 8,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  color: _currentIndex == index
-                      ? const Color(0xFF6518F4)
+                  color: _currentPage == index
+                      ? Theme.of(context).primaryColor
+                      : isDarkMode
+                      ? Colors.grey.shade700
                       : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ),
@@ -113,164 +289,27 @@ class _BannerCarouselState extends State<BannerCarousel> {
       ],
     );
   }
+}
 
-  Widget _buildBanner(BannerItem banner) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {
-            // Handle banner tap
-            debugPrint('Banner tapped: ${banner.title}');
-          },
-          splashColor: Colors.white.withAlpha(51),
-          highlightColor: Colors.white.withAlpha(26),
-          child: Container(
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Image background with proper fitting
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
-                    banner.imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    errorBuilder: (context, error, stackTrace) {
-                      debugPrint('Error loading image: $error');
-                      return Container(
-                        color: banner.backgroundColor,
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.image_not_supported,
-                                color: Colors.white,
-                                size: 40,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Image not available',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(204),
-                                ),
-                              ),
-                              Text(
-                                'Will be updated from admin server',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(179),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+// Custom painter for background pattern
+class PatternPainter extends CustomPainter {
+  final bool isDarkMode;
 
-                // Gradient overlay for better text readability
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        banner.backgroundColor.withAlpha(230),
-                        banner.backgroundColor.withAlpha(153),
-                        banner.backgroundColor.withAlpha(77),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.3, 0.6, 1.0],
-                    ),
-                  ),
-                ),
+  PatternPainter(this.isDarkMode);
 
-                // Content with proper layout
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Row(
-                    children: [
-                      // Text content (40% of width)
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              banner.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              banner.description,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 20),
-                            Material(
-                              borderRadius: BorderRadius.circular(20),
-                              color: Colors.white,
-                              child: InkWell(
-                                onTap: () {
-                                  debugPrint(
-                                    'Shop now button tapped for: ${banner.title}',
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(20),
-                                splashColor: const Color(
-                                  0xFF6518F4,
-                                ).withAlpha(26),
-                                highlightColor: const Color(
-                                  0xFF6518F4,
-                                ).withAlpha(13),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 10,
-                                  ),
-                                  child: Text(
-                                    banner.buttonText,
-                                    style: const TextStyle(
-                                      color: Color(0xFF6518F4),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = isDarkMode ? Colors.white : Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
 
-                      // Space for image visibility (60% of width)
-                      const Expanded(flex: 3, child: SizedBox()),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    // Draw diagonal lines
+    for (double i = 0; i < size.width + size.height; i += 20) {
+      canvas.drawLine(Offset(i, 0), Offset(0, i), paint);
+    }
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -154,3 +154,4 @@ class RecentlyViewedSection extends StatelessWidget {
     );
   }
 }
+ 

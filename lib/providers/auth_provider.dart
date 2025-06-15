@@ -56,7 +56,7 @@ class AuthProvider with ChangeNotifier {
           'email': _firebaseUser!.email ?? '',
           'address': '',
         });
-
+        
         _user = UserModel(
           id: _firebaseUser!.uid,
           name: _firebaseUser!.displayName ?? '',
@@ -198,7 +198,7 @@ class AuthProvider with ChangeNotifier {
           debugPrint('Error with popup sign-in: $e');
           // Fallback to redirect for web
           await _auth.signInWithRedirect(googleProvider);
-          // Note: Redirect will navigate away from the page,
+          // Note: Redirect will navigate away from the page, 
           // so we'll handle the result when the page loads again
           return false;
         }

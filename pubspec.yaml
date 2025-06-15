@@ -48,7 +48,7 @@ dependencies:
   cached_network_image: ^3.3.1
   flutter_rating_bar: ^4.0.1
   intl: ^0.19.0
-  
+
   # Storage
   shared_preferences: ^2.2.2
 

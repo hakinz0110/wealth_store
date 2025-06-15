@@ -52,7 +52,7 @@ class _SearchScreenState extends State<SearchScreen> {
       });
 
       // Apply search filter
-      Provider.of<ProductProvider>(context, listen: false).setSearchQuery(query);
+    Provider.of<ProductProvider>(context, listen: false).setSearchQuery(query);
       
       // Simulate search delay for better UX
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -89,7 +89,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final userActivityProvider = Provider.of<UserActivityProvider>(context, listen: false);
     final products = productProvider.filteredProducts;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -109,26 +109,26 @@ class _SearchScreenState extends State<SearchScreen> {
           });
         },
         child: Column(
-          children: [
+        children: [
             // Search bar with voice search
-            Padding(
+          Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
                   // Search text field
                   Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
                         hintText: 'Search for products...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
                                 onPressed: _clearSearch,
-                              )
-                            : null,
-                        border: OutlineInputBorder(
+                      )
+                    : null,
+                border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
                             color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
@@ -147,12 +147,12 @@ class _SearchScreenState extends State<SearchScreen> {
                         filled: true,
                         fillColor: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
                         contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      ),
+              ),
                       textInputAction: TextInputAction.search,
                       onSubmitted: (_) => _onSearch(),
-                    ),
-                  ),
-                  
+            ),
+          ),
+
                   // Voice search button
                   const SizedBox(width: 8),
                   VoiceSearchButton(
@@ -206,7 +206,7 @@ class _SearchScreenState extends State<SearchScreen> {
             if (!_isSearching && _recentSearches.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Column(
+                    child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -259,7 +259,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 Icons.search_off,
                                 size: 80,
                                 color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
-                              ),
+                          ),
                               const SizedBox(height: 16),
                               Text(
                                 'No results found for "$_searchQuery"',
@@ -272,22 +272,22 @@ class _SearchScreenState extends State<SearchScreen> {
                               TextButton(
                                 onPressed: _clearSearch,
                                 child: const Text('Clear Search'),
-                              ),
-                            ],
-                          ),
-                        )
+                        ),
+                      ],
+                    ),
+                  )
                       : Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: GridView.builder(
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
+                          crossAxisCount: 2,
                               childAspectRatio: 0.55, // Adjusted for 80/20 proportions
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                            ),
-                            itemCount: products.length,
-                            itemBuilder: (ctx, index) {
-                              final product = products[index];
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                    itemCount: products.length,
+                    itemBuilder: (ctx, index) {
+                      final product = products[index];
                               final isInWishlist = favoritesProvider.isFavorite(product);
                               
                               return ProductCard(
@@ -301,7 +301,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => ProductDetailScreen(
-                                        product: product,
+                        product: product,
                                       ),
                                     ),
                                   );
@@ -336,15 +336,15 @@ class _SearchScreenState extends State<SearchScreen> {
                                       ),
                                       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                                     ),
-                                  );
-                                },
+                      );
+                    },
                                 isInWishlist: isInWishlist,
                               );
                             },
                           ),
-                        ),
-            ),
-          ],
+                  ),
+          ),
+        ],
         ),
       ),
     );
