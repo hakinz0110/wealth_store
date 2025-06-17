@@ -8,13 +8,13 @@ class ProductProvider with ChangeNotifier {
   List<ProductModel> _products = [];
   List<ProductModel> _filteredProducts = [];
   bool _isLoading = false;
-  String _selectedCategory = 'All';
+  String? _selectedCategory = 'All';
   String _searchQuery = '';
 
   List<ProductModel> get products => _products;
   List<ProductModel> get filteredProducts => _filteredProducts;
   bool get isLoading => _isLoading;
-  String get selectedCategory => _selectedCategory;
+  String? get selectedCategory => _selectedCategory;
   List<String> get categories {
     final categorySet = <String>{'All'};
     for (var product in _products) {
@@ -125,9 +125,21 @@ class ProductProvider with ChangeNotifier {
     _applyFilters();
   }
 
-  void setCategory(String category) {
-    _selectedCategory = category;
-    _applyFilters();
+  void setCategory(String? category) {
+    // If category is null, reset to show all products
+    if (category == null) {
+      _filteredProducts = List.from(products);
+      _selectedCategory = null;
+    } else {
+      // Filter products by the selected category
+      _selectedCategory = category;
+      _filteredProducts = products
+          .where(
+            (product) =>
+                product.category.toLowerCase() == category.toLowerCase(),
+          )
+          .toList();
+    }
     notifyListeners();
   }
 
@@ -141,7 +153,9 @@ class ProductProvider with ChangeNotifier {
     _filteredProducts = _products.where((product) {
       // Apply category filter
       final categoryMatches =
-          _selectedCategory == 'All' || product.category == _selectedCategory;
+          _selectedCategory == null ||
+          _selectedCategory == 'All' ||
+          product.category == _selectedCategory;
 
       // Apply search filter if there's a search query
       final searchMatches =
@@ -170,4 +184,30 @@ class ProductProvider with ChangeNotifier {
 
   // Placeholder for recently viewed products
   List<ProductModel> get recentlyViewedProducts => [];
+
+  void searchProducts(String query) {
+    // Filter products based on the search query
+    final searchResults = products
+        .where(
+          (product) =>
+              product.name.toLowerCase().contains(query.toLowerCase()) ||
+              product.description.toLowerCase().contains(query.toLowerCase()) ||
+              product.category.toLowerCase().contains(query.toLowerCase()),
+        )
+        .toList();
+
+    // Use the existing method to update filtered products
+    updateFilteredProducts(searchResults);
+  }
+
+  void resetFilter() {
+    // Reset to show all products
+    updateFilteredProducts(List.from(products));
+    setCategory(null);
+  }
+
+  void updateFilteredProducts(List<ProductModel> newProducts) {
+    _filteredProducts = newProducts;
+    notifyListeners();
+  }
 }

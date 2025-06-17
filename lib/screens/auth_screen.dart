@@ -36,8 +36,8 @@ class _AuthScreenState extends State<AuthScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            // Go back to splash screen
-            Navigator.of(context).pushReplacementNamed('/splash');
+            // Go back to the last splash screen (SplashFinalPage)
+            Navigator.of(context).pop();
           },
         ),
         centerTitle: true,
@@ -50,8 +50,24 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
       ),
-      body: SafeArea(
-        child: _isLogin ? const LoginForm() : const RegisterForm(),
+      body: Center(
+        child: Card(
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(48),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 40.0,
+              vertical: 48.0,
+            ),
+            child: SizedBox(
+              width: 400,
+              child: _isLogin ? const LoginForm() : const RegisterForm(),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -99,53 +115,53 @@ class _LoginFormState extends State<LoginForm> {
     final primaryColor = const Color(0xFF6518F4);
 
     return SingleChildScrollView(
-            child: Padding(
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Form(
           key: _formKey,
-              child: Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            children: [
               const SizedBox(height: 20),
 
               // Login title
               Center(
                 child: Text(
                   'Log in to your Wealth Store account',
-                    style: TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                     color: Colors.grey.shade800,
                   ),
-                    textAlign: TextAlign.center,
+                  textAlign: TextAlign.center,
                 ),
-                  ),
+              ),
 
               const SizedBox(height: 30),
 
-                  // Error message
-                  if (authProvider.error.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+              // Error message
+              if (authProvider.error.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.red.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: Colors.red),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              authProvider.error,
+                    border: Border.all(color: Colors.red.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          authProvider.error,
                           style: const TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
+                  ),
+                ),
 
               // Email input
               TextFormField(
@@ -299,19 +315,22 @@ class _LoginFormState extends State<LoginForm> {
                 width: double.infinity,
                 height: 55,
                 child: OutlinedButton.icon(
-                    onPressed: authProvider.isLoading
-                        ? null
-                        : () async {
+                  onPressed: authProvider.isLoading
+                      ? null
+                      : () async {
                           final success = await authProvider.signInWithGoogle();
                           if (success && mounted) {
                             // Navigate to the home page after successful Google sign-in
                             Navigator.pushReplacementNamed(context, '/main');
-                            }
-                          },
-                    icon: Image.asset(
-                      'assets/images/google_g_logo.png',
-                      height: 24,
-                    ),
+                          }
+                        },
+                  icon: Image.asset(
+                    'assets/images/google_g_logo.png',
+                    height: 24,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const SizedBox.shrink();
+                    },
+                  ),
                   label: const Text(
                     'Continue with Google',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -872,25 +891,25 @@ class _RegisterFormState extends State<RegisterForm> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                     elevation: 2,
-                      ),
-                      child: authProvider.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                  ),
+                  child: authProvider.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
                             color: Colors.white,
-                              ),
-                            )
-                          : const Text(
+                          ),
+                        )
+                      : const Text(
                           'Register',
-                              style: TextStyle(
-                                fontSize: 16,
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
-                              ),
-                            ),
-                    ),
+                        ),
+                ),
+              ),
 
               const SizedBox(height: 20),
 
@@ -931,6 +950,9 @@ class _RegisterFormState extends State<RegisterForm> {
                   icon: Image.asset(
                     'assets/images/google_g_logo.png',
                     height: 24,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const SizedBox.shrink();
+                    },
                   ),
                   label: const Text(
                     'Continue with Google',
@@ -973,10 +995,10 @@ class _RegisterFormState extends State<RegisterForm> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
 
               const SizedBox(height: 30),
             ],

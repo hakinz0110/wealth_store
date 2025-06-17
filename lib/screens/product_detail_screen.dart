@@ -20,12 +20,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isExpanded = false;
-  final int _quantity = 1;
+  int _quantity = 1;
+
+  // For variations
+  String? _selectedColor;
+  String? _selectedSize;
+  ProductVariation? _selectedVariation;
+
+  // For image carousel
+  late PageController _pageController;
+  int _currentImageIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _pageController = PageController();
 
     // Track product view
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -34,11 +44,47 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         listen: false,
       ).trackProductView(widget.product);
     });
+
+    // Initialize variation selection if needed
+    if (widget.product.type == 'variation' &&
+        widget.product.variations != null &&
+        widget.product.variations!.isNotEmpty) {
+      _selectedColor = widget.product.variations!.first.color;
+      _selectedSize = widget.product.variations!.first.size;
+      _selectedVariation = widget.product.variations!.first;
+    }
+  }
+
+  void _onSelectColor(String color) {
+    setState(() {
+      _selectedColor = color;
+      // Update size to first available for this color
+      final sizes = widget.product.variations!
+          .where((v) => v.color == color)
+          .map((v) => v.size)
+          .toSet();
+      _selectedSize = sizes.isNotEmpty ? sizes.first : null;
+      _selectedVariation = widget.product.variations!.firstWhere(
+        (v) => v.color == _selectedColor && v.size == _selectedSize,
+        orElse: () => widget.product.variations!.first,
+      );
+    });
+  }
+
+  void _onSelectSize(String size) {
+    setState(() {
+      _selectedSize = size;
+      _selectedVariation = widget.product.variations!.firstWhere(
+        (v) => v.color == _selectedColor && v.size == size,
+        orElse: () => widget.product.variations!.first,
+      );
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -48,9 +94,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     final favoritesProvider = Provider.of<FavoritesProvider>(context);
     final isInWishlist = favoritesProvider.isFavorite(widget.product);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    // Get sample reviews
     final reviews = ReviewModel.getDummyReviews();
+
+    // Price range for variations
+    double? minPrice, maxPrice;
+    if (widget.product.type == 'variation' &&
+        widget.product.variations != null &&
+        widget.product.variations!.isNotEmpty) {
+      minPrice = widget.product.variations!
+          .map((v) => v.price)
+          .reduce((a, b) => a < b ? a : b);
+      maxPrice = widget.product.variations!
+          .map((v) => v.price)
+          .reduce((a, b) => a > b ? a : b);
+    }
+
+    // Product images: support multiple images if available
+    List<String> images = [];
+    if (widget.product.imageUrl.contains(',')) {
+      images = widget.product.imageUrl.split(',').map((e) => e.trim()).toList();
+    } else {
+      images = [widget.product.imageUrl];
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -124,21 +189,62 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Product image with hero animation
-                    Hero(
-                      tag: 'product_image_${widget.product.id}',
-                      child: Container(
-                        height: 300,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? Colors.grey.shade800
-                              : Colors.grey.shade100,
-                        ),
-                        child: Image.asset(
-                          widget.product.imageUrl,
-                          fit: BoxFit.contain,
-                        ),
+                    // Product image carousel
+                    SizedBox(
+                      height: 300,
+                      width: double.infinity,
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          PageView.builder(
+                            controller: _pageController,
+                            itemCount: images.length,
+                            onPageChanged: (index) {
+                              setState(() {
+                                _currentImageIndex = index;
+                              });
+                            },
+                            itemBuilder: (context, index) {
+                              return Container(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade100,
+                                child: Image.asset(
+                                  images[index],
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          if (images.length > 1)
+                            Positioned(
+                              bottom: 12,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(images.length, (index) {
+                                  return AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    width: _currentImageIndex == index ? 16 : 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: _currentImageIndex == index
+                                          ? Theme.of(context).primaryColor
+                                          : Colors.grey,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
 
@@ -167,14 +273,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    '\$${widget.product.price.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).primaryColor,
+                                  if (widget.product.type == 'variation' &&
+                                      minPrice != null &&
+                                      maxPrice != null)
+                                    Text(
+                                      '\$24${minPrice.toStringAsFixed(2)} - \$24${maxPrice.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                    )
+                                  else
+                                    Text(
+                                      '\$24${widget.product.price.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
                                     ),
-                                  ),
                                   if (widget.product.rating > 0)
                                     Row(
                                       children: [
@@ -417,28 +535,43 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   // Add to cart button
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        cartProvider.addItem(widget.product);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '${widget.product.name} added to cart',
-                            ),
-                            duration: const Duration(seconds: 2),
-                            action: SnackBarAction(
-                              label: 'VIEW CART',
-                              onPressed: () {
-                                // Navigate to cart
-                                Navigator.of(
-                                  context,
-                                ).popUntil((route) => route.isFirst);
-                                // Switch to cart tab
-                                // This would be handled by the parent widget
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                      onPressed:
+                          (widget.product.type == 'variation' &&
+                              (_selectedVariation == null ||
+                                  !_selectedVariation!.inStock))
+                          ? null
+                          : () {
+                              // For variation, add selected variation; for single, add product
+                              if (widget.product.type == 'variation' &&
+                                  _selectedVariation != null) {
+                                // You may want to pass variation info to cart
+                                cartProvider.addItem(
+                                  widget.product.copyWith(
+                                    price: _selectedVariation!.price,
+                                    color: _selectedVariation!.color,
+                                    size: _selectedVariation!.size,
+                                  ),
+                                );
+                              } else {
+                                cartProvider.addItem(widget.product);
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '${widget.product.name} added to cart',
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                  action: SnackBarAction(
+                                    label: 'VIEW CART',
+                                    onPressed: () {
+                                      Navigator.of(
+                                        context,
+                                      ).popUntil((route) => route.isFirst);
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
@@ -447,9 +580,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
-                        'ADD TO CART',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      child: Text(
+                        widget.product.type == 'variation'
+                            ? 'CHECKOUT'
+                            : 'ADD TO CART',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -580,4 +715,3 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     );
   }
 }
- 

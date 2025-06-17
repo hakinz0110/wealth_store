@@ -125,14 +125,7 @@ class SeasonalCollection extends StatelessWidget {
                           imageAsset,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey.shade200,
-                              child: const Icon(
-                                Icons.image_not_supported,
-                                color: Colors.grey,
-                                size: 40,
-                              ),
-                            );
+                            return const SizedBox.shrink();
                           },
                         ),
                       ),
@@ -202,4 +195,3 @@ class SeasonalCollection extends StatelessWidget {
     }
   }
 }
- 

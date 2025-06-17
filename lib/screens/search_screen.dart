@@ -5,9 +5,9 @@ import '../providers/favorites_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/user_activity_provider.dart';
 import '../widgets/product_card.dart';
-import '../widgets/voice_search_button.dart';
 import '../widgets/skeleton_loading.dart';
 import 'product_detail_screen.dart';
+import 'filter_modal_content.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -35,33 +35,44 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onSearch() {
-    final query = _searchController.text.trim();
-    if (query.isNotEmpty) {
-      setState(() {
-        _searchQuery = query;
-        _isSearching = true;
-        _isLoading = true;
-        
-        // Add to recent searches if not already there
-        if (!_recentSearches.contains(query)) {
-          _recentSearches.insert(0, query);
-          if (_recentSearches.length > 5) {
-            _recentSearches.removeLast();
+    final productProvider = Provider.of<ProductProvider>(
+      context,
+      listen: false,
+    );
+    final userActivityProvider = Provider.of<UserActivityProvider>(
+      context,
+      listen: false,
+    );
+
+    // Trim and validate search query
+    final searchQuery = _searchController.text.trim();
+
+    // Only proceed if search query is not empty
+    if (searchQuery.isNotEmpty) {
+      // Add to recent searches if not already present
+      if (!_recentSearches.contains(searchQuery)) {
+        setState(() {
+          if (_recentSearches.length >= 5) {
+            _recentSearches.removeAt(0);
           }
-        }
+          _recentSearches.add(searchQuery);
+        });
+      }
+
+      // Set search query and filter products
+      setState(() {
+        _searchQuery = searchQuery;
+        _isSearching = true; // Explicitly set searching to true
       });
 
-      // Apply search filter
-    Provider.of<ProductProvider>(context, listen: false).setSearchQuery(query);
-      
-      // Simulate search delay for better UX
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      });
+      // Perform search
+      productProvider.searchProducts(searchQuery);
+
+      // Log user activity
+      userActivityProvider.addSearchActivity(searchQuery);
+
+      // Unfocus the keyboard
+      FocusScope.of(context).unfocus();
     }
   }
 
@@ -69,16 +80,28 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       _searchController.clear();
       _searchQuery = '';
-      _isSearching = false;
+      _isSearching = false; // Reset searching flag
     });
-    Provider.of<ProductProvider>(context, listen: false).setSearchQuery('');
+
+    // Reset product filtering
+    final productProvider = Provider.of<ProductProvider>(
+      context,
+      listen: false,
+    );
+    productProvider.resetFilter();
   }
-  
-  void _handleVoiceSearchResult(String result) {
-    if (result.isNotEmpty) {
-      _searchController.text = result;
-      _onSearch();
-    }
+
+  void _showFilterModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return const FilterModalContent();
+      },
+    );
   }
 
   @override
@@ -86,7 +109,10 @@ class _SearchScreenState extends State<SearchScreen> {
     final productProvider = Provider.of<ProductProvider>(context);
     final favoritesProvider = Provider.of<FavoritesProvider>(context);
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
-    final userActivityProvider = Provider.of<UserActivityProvider>(context, listen: false);
+    final userActivityProvider = Provider.of<UserActivityProvider>(
+      context,
+      listen: false,
+    );
     final products = productProvider.filteredProducts;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -109,104 +135,59 @@ class _SearchScreenState extends State<SearchScreen> {
           });
         },
         child: Column(
-        children: [
-            // Search bar with voice search
-          Padding(
+          children: [
+            // Search bar
+            Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  // Search text field
-                  Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                        hintText: 'Search for products...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                                onPressed: _clearSearch,
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Theme.of(context).primaryColor),
-                        ),
-                        filled: true,
-                        fillColor: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (_) => _onSearch(),
-            ),
-          ),
-
-                  // Voice search button
-                  const SizedBox(width: 8),
-                  VoiceSearchButton(
-                    size: 48,
-                    onSearchResult: _handleVoiceSearchResult,
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search for products...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: _clearSearch,
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: isDarkMode
+                          ? Colors.grey.shade700
+                          : Colors.grey.shade300,
+                    ),
                   ),
-                ],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: isDarkMode
+                          ? Colors.grey.shade700
+                          : Colors.grey.shade300,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: isDarkMode
+                      ? Colors.grey.shade800
+                      : Colors.grey.shade50,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                ),
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _onSearch(),
               ),
             ),
-
-            // Categories chips
-            if (!_isSearching)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: productProvider.categories.map((category) {
-                    final isSelected = category == productProvider.selectedCategory;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        label: Text(category),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          productProvider.setCategory(category);
-                        },
-                        backgroundColor: isDarkMode ? Colors.grey.shade800 : Colors.white,
-                        selectedColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                        labelStyle: TextStyle(
-                          color: isSelected 
-                              ? Theme.of(context).primaryColor 
-                              : isDarkMode ? Colors.white : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(
-                            color: isSelected 
-                                ? Theme.of(context).primaryColor 
-                                : isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
-                          ),
-                        ),
-                        checkmarkColor: Theme.of(context).primaryColor,
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
 
             // Recent searches
             if (!_isSearching && _recentSearches.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -246,110 +227,140 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
 
-            // Search results or all products
+            // Search results
             Expanded(
               child: _isLoading
                   ? _buildLoadingGrid()
                   : _isSearching && _searchQuery.isNotEmpty && products.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.search_off,
-                                size: 80,
-                                color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 80,
+                            color: isDarkMode
+                                ? Colors.grey.shade600
+                                : Colors.grey.shade400,
                           ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No results found for "$_searchQuery"',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                          const SizedBox(height: 16),
+                          Text(
+                            'No results found for "$_searchQuery"',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isDarkMode
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: _clearSearch,
+                            child: const Text('Clear Search'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        children: [
+                          // Filter icon only appears after search
+                          if (_isSearching)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.filter_list_rounded),
+                                  onPressed: () => _showFilterModal(context),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: _clearSearch,
-                                child: const Text('Clear Search'),
-                        ),
-                      ],
-                    ),
-                  )
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: GridView.builder(
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                              childAspectRatio: 0.55, // Adjusted for 80/20 proportions
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                    itemCount: products.length,
-                    itemBuilder: (ctx, index) {
-                      final product = products[index];
-                              final isInWishlist = favoritesProvider.isFavorite(product);
-                              
-                              return ProductCard(
-                                product: product,
-                                onTap: () {
-                                  // Track product view
-                                  userActivityProvider.trackProductView(product);
-                                  
-                                  // Navigate to product details
-                                  Navigator.push(
-                                    context,
+                              ],
+                            ),
+                          Expanded(
+                            child: GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    childAspectRatio: 0.55,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                  ),
+                              itemCount: products.length,
+                              itemBuilder: (ctx, index) {
+                                final product = products[index];
+                                final isInWishlist = favoritesProvider
+                                    .isFavorite(product);
+                                return ProductCard(
+                                  product: product,
+                                  onTap: () => Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (context) => ProductDetailScreen(
-                        product: product,
-                                      ),
+                                      builder: (context) =>
+                                          ProductDetailScreen(product: product),
                                     ),
-                                  );
-                                },
-                                onAddToCart: () {
-                                  cartProvider.addItem(product);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('${product.name} added to cart'),
-                                      duration: const Duration(seconds: 1),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  onAddToCart: () {
+                                    cartProvider.addItem(product);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '${product.name} added to cart',
+                                        ),
+                                        duration: const Duration(seconds: 1),
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        margin: const EdgeInsets.fromLTRB(
+                                          16,
+                                          0,
+                                          16,
+                                          16,
+                                        ),
                                       ),
-                                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                    ),
-                                  );
-                                },
-                                onAddToWishlist: () {
-                                  favoritesProvider.toggleFavorite(product);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        isInWishlist
-                                            ? '${product.name} removed from favorites'
-                                            : '${product.name} added to favorites'
+                                    );
+                                  },
+                                  onAddToWishlist: () {
+                                    favoritesProvider.toggleFavorite(product);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          isInWishlist
+                                              ? '${product.name} removed from favorites'
+                                              : '${product.name} added to favorites',
+                                        ),
+                                        duration: const Duration(seconds: 1),
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        margin: const EdgeInsets.fromLTRB(
+                                          16,
+                                          0,
+                                          16,
+                                          16,
+                                        ),
                                       ),
-                                      duration: const Duration(seconds: 1),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                    ),
-                      );
-                    },
-                                isInWishlist: isInWishlist,
-                              );
-                            },
+                                    );
+                                  },
+                                  isInWishlist: isInWishlist,
+                                );
+                              },
+                            ),
                           ),
-                  ),
-          ),
-        ],
+                        ],
+                      ),
+                    ),
+            ),
+          ],
         ),
       ),
     );
   }
-  
+
   Widget _buildLoadingGrid() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -367,4 +378,15 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
     );
   }
+}
+
+class FilterOptions {
+  final String sortBy;
+  final String category;
+  final RangeValues priceRange;
+  FilterOptions({
+    required this.sortBy,
+    required this.category,
+    required this.priceRange,
+  });
 }

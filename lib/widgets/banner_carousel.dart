@@ -25,7 +25,7 @@ class BannerCarousel extends StatefulWidget {
   const BannerCarousel({
     super.key,
     required this.banners,
-    this.height = 180,
+    this.height = 250,
     required this.onBannerTap,
   });
 
@@ -149,84 +149,59 @@ class _BannerCarouselState extends State<BannerCarousel>
                     borderRadius: BorderRadius.circular(20),
                     child: Stack(
                       children: [
-                        // Background pattern
-                        Positioned.fill(
-                          child: Opacity(
-                            opacity: 0.1,
-                            child: CustomPaint(
-                              painter: PatternPainter(isDarkMode),
-                            ),
-                          ),
-                        ),
-
-                        // Content
                         Row(
                           children: [
                             // Text content
                             Expanded(
                               flex: 3,
                               child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: AnimatedBuilder(
-                                  animation: _animationController,
-                                  builder: (context, child) {
-                                    return FadeTransition(
-                                      opacity: _fadeAnimation,
-                                      child: SlideTransition(
-                                        position: _slideAnimation,
-                                        child: child,
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      banner.title,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    );
-                                  },
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        banner.title,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      banner.description,
+                                      style: TextStyle(
+                                        color: Colors.white.withAlpha(220),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          widget.onBannerTap(index),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: banner.backgroundColor,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        banner.buttonText,
                                         style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 22,
                                           fontWeight: FontWeight.bold,
+                                          fontSize: 16,
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        banner.description,
-                                        style: TextStyle(
-                                          color: Colors.white.withAlpha(220),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      ElevatedButton(
-                                        onPressed: () =>
-                                            widget.onBannerTap(index),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                          foregroundColor:
-                                              banner.backgroundColor,
-                                          elevation: 0,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              30,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          banner.buttonText,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -234,21 +209,12 @@ class _BannerCarouselState extends State<BannerCarousel>
                             // Image
                             Expanded(
                               flex: 2,
-                              child: Hero(
-                                tag: 'banner_image_$index',
-                                child: Image.asset(
-                                  banner.imageUrl,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Icon(
-                                        Icons.image_not_supported,
-                                        color: Colors.white54,
-                                        size: 40,
-                                      ),
-                                    );
-                                  },
-                                ),
+                              child: Image.asset(
+                                banner.imageUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const SizedBox.shrink();
+                                },
                               ),
                             ),
                           ],
@@ -264,7 +230,7 @@ class _BannerCarouselState extends State<BannerCarousel>
 
         // Indicator dots
         Padding(
-          padding: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.only(top: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(

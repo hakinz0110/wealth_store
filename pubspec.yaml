@@ -63,6 +63,8 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
 
+  flutter_native_splash: ^2.3.2
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -110,3 +112,9 @@ flutter:
     - assets/images/intro_logo.png
     - assets/images/
     - assets/images/products/
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/images/wealth_logo.jpg
+  android: true
+  ios: true

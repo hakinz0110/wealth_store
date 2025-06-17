@@ -23,6 +23,9 @@ import '../widgets/skeleton_loading.dart';
 
 import 'search_screen.dart';
 import 'product_detail_screen.dart';
+import 'favorites_screen.dart';
+import 'subcategory_screen.dart';
+import 'category_products_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -63,12 +66,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Sample category data with icons
   final List<Map<String, dynamic>> categories = [
-    {'name': 'Computers', 'icon': Icons.computer},
-    {'name': 'Phones', 'icon': Icons.phone_android},
-    {'name': 'Headphones', 'icon': Icons.headphones},
-    {'name': 'Gaming', 'icon': Icons.sports_esports},
-    {'name': 'Cameras', 'icon': Icons.camera_alt},
-    {'name': 'Smart Home', 'icon': Icons.home},
+    {'name': 'Sports', 'icon': Icons.sports_soccer},
+    {'name': 'Electronics', 'icon': Icons.electrical_services},
+    {'name': 'Animals', 'icon': Icons.pets},
+    {'name': 'Cosmetics', 'icon': Icons.brush},
+    {'name': 'Sport Shoes', 'icon': Icons.directions_run},
+    {'name': 'Sports Equipments', 'icon': Icons.sports_basketball},
+    {'name': 'Kitchen furniture', 'icon': Icons.kitchen},
+    {'name': 'Laptop', 'icon': Icons.laptop},
+    {'name': 'Shirts', 'icon': Icons.checkroom},
+    {'name': 'Furniture', 'icon': Icons.chair},
+    {'name': 'Clothes', 'icon': Icons.checkroom},
+    {'name': 'Shoes', 'icon': Icons.hiking},
+    {'name': 'Jewellery', 'icon': Icons.watch},
+    {'name': 'Track suits', 'icon': Icons.sports_mma},
+    {'name': 'Bedroom furniture', 'icon': Icons.bed},
+    {'name': 'Office furniture', 'icon': Icons.desk},
+    {'name': 'Mobile', 'icon': Icons.smartphone},
   ];
 
   // Navigation sections
@@ -157,6 +171,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   pinned: true,
                   snap: false,
                   centerTitle: false,
+                  backgroundColor: Colors.white,
+                  elevation: 4,
+                  shadowColor: Colors.black.withOpacity(0.15),
+                  flexibleSpace: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   title: Row(
                     children: [
                       Container(
@@ -189,47 +225,46 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.favorite_border),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const FavoritesScreen(),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
 
                 // Responsive Sections
-                SliverPadding(
-                  padding: Responsive.responsivePadding(context),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      // Adaptive Banner Carousel
-                      AspectRatio(
-                        aspectRatio: Responsive.getResponsiveValue(
-                          context: context,
-                          mobile: 16 / 9,
-                          tablet: 21 / 9,
-                          desktop: 25 / 9,
-                        ),
-                        child: BannerCarousel(
-                          banners: banners,
-                          onBannerTap: (index) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Banner ${index + 1} tapped'),
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          },
-                        ),
+                SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Adaptive Banner Carousel
+                    AspectRatio(
+                      aspectRatio: Responsive.getResponsiveValue(
+                        context: context,
+                        mobile: 16.0 / 7.0,
+                        tablet: 21.0 / 6.0,
+                        desktop: 25.0 / 5.0,
                       ),
+                      child: BannerCarousel(
+                        banners: banners,
+                        onBannerTap: (index) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Banner ${index + 1} tapped'),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
 
-                      // Categories Section
-                      _buildCategoriesSection(context),
+                    // Categories Section
+                    _buildCategoriesSection(context),
 
-                      // Placeholder for Deal of the Day
-                      const SizedBox(height: 16),
-
-                      // Recently Viewed Section
-                      const SizedBox(
-                        height: 16,
-                      ), // Add a spacer instead of the section
-                    ]),
-                  ),
+                    // Recently Viewed Section
+                  ]),
                 ),
 
                 // Adaptive Product Grid
@@ -295,39 +330,220 @@ class _HomeScreenState extends State<HomeScreen> {
   // Categories Section with Responsive Layout
   Widget _buildCategoriesSection(BuildContext context) {
     final categories = [
-      {'name': 'Computers', 'icon': Icons.computer},
-      {'name': 'Phones', 'icon': Icons.phone_android},
-      {'name': 'Headphones', 'icon': Icons.headphones},
-      {'name': 'Gaming', 'icon': Icons.sports_esports},
-      {'name': 'Cameras', 'icon': Icons.camera_alt},
-      {'name': 'Smart Home', 'icon': Icons.home},
+      {
+        'name': 'Computers',
+        'icon': Icons.computer,
+        'subCategories': [
+          {
+            'name': 'Laptops',
+            'icon': Icons.laptop,
+            'items': [
+              ProductModel(
+                id: 'laptop1',
+                name: 'MacBook Pro',
+                category: 'Laptops',
+                price: 1299.0,
+                imageUrl: 'assets/images/products/laptop1.png',
+                description: 'High-performance laptop for professionals',
+                rating: 4.5,
+              ),
+              ProductModel(
+                id: 'laptop2',
+                name: 'Dell XPS',
+                category: 'Laptops',
+                price: 1099.0,
+                imageUrl: 'assets/images/products/laptop2.png',
+                description: 'Sleek and powerful laptop',
+                rating: 4.3,
+              ),
+            ],
+          },
+          {
+            'name': 'Desktops',
+            'icon': Icons.desktop_windows,
+            'items': [
+              ProductModel(
+                id: 'desktop1',
+                name: 'Gaming Desktop',
+                category: 'Desktops',
+                price: 1500.0,
+                imageUrl: 'assets/images/products/desktop1.png',
+                description: 'High-end gaming desktop computer',
+                rating: 4.7,
+              ),
+            ],
+          },
+        ],
+      },
+      {
+        'name': 'Phones',
+        'icon': Icons.phone_android,
+        'subCategories': [
+          {
+            'name': 'Smartphones',
+            'icon': Icons.smartphone,
+            'items': [
+              ProductModel(
+                id: 'phone1',
+                name: 'iPhone 13',
+                category: 'Smartphones',
+                price: 799.0,
+                imageUrl: 'assets/images/products/phone1.png',
+                description: 'Latest iPhone model',
+                rating: 4.6,
+              ),
+              ProductModel(
+                id: 'phone2',
+                name: 'Samsung Galaxy S21',
+                category: 'Smartphones',
+                price: 699.0,
+                imageUrl: 'assets/images/products/phone2.png',
+                description: 'Flagship Android smartphone',
+                rating: 4.4,
+              ),
+            ],
+          },
+        ],
+      },
+      {
+        'name': 'Headphones',
+        'icon': Icons.headphones,
+        'subCategories': [
+          {
+            'name': 'Wireless',
+            'icon': Icons.bluetooth,
+            'items': [
+              ProductModel(
+                id: 'headphone1',
+                name: 'AirPods Pro',
+                category: 'Wireless Headphones',
+                price: 249.0,
+                imageUrl: 'assets/images/products/headphone1.png',
+                description: 'Noise-cancelling wireless earbuds',
+                rating: 4.5,
+              ),
+            ],
+          },
+        ],
+      },
+      {
+        'name': 'Gaming',
+        'icon': Icons.sports_esports,
+        'subCategories': [
+          {
+            'name': 'Consoles',
+            'icon': Icons.gamepad,
+            'items': [
+              ProductModel(
+                id: 'gaming1',
+                name: 'PlayStation 5',
+                category: 'Gaming Consoles',
+                price: 499.0,
+                imageUrl: 'assets/images/products/gaming1.png',
+                description: 'Latest gaming console from Sony',
+                rating: 4.8,
+              ),
+            ],
+          },
+        ],
+      },
+      {
+        'name': 'Cameras',
+        'icon': Icons.camera_alt,
+        'subCategories': [
+          {
+            'name': 'Digital',
+            'icon': Icons.camera,
+            'items': [
+              ProductModel(
+                id: 'camera1',
+                name: 'Canon EOS R6',
+                category: 'Digital Cameras',
+                price: 2499.0,
+                imageUrl: 'assets/images/products/camera1.png',
+                description: 'Professional mirrorless camera',
+                rating: 4.7,
+              ),
+            ],
+          },
+        ],
+      },
+      {
+        'name': 'Smart Home',
+        'icon': Icons.home,
+        'subCategories': [
+          {
+            'name': 'Assistants',
+            'icon': Icons.speaker,
+            'items': [
+              ProductModel(
+                id: 'smarthome1',
+                name: 'Google Nest Hub',
+                category: 'Smart Home Assistants',
+                price: 89.0,
+                imageUrl: 'assets/images/products/smarthome1.png',
+                description: 'Smart display with Google Assistant',
+                rating: 4.3,
+              ),
+            ],
+          },
+        ],
+      },
     ];
 
-    return SizedBox(
-      height: Responsive.getResponsiveValue(
-        context: context,
-        mobile: 100,
-        tablet: 120,
-        desktop: 140,
-      ),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          return CategoryItem(
-            name: categories[index]['name'] as String,
-            icon: categories[index]['icon'] as IconData,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${categories[index]['name']} category tapped'),
-                  duration: const Duration(seconds: 1),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            'Categories',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.headlineSmall?.color,
+            ),
+          ),
+        ),
+
+        // Categories ListView
+        Container(
+          height: 140,
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: CategoryItem(
+                  name: categories[index]['name'] as String,
+                  icon: categories[index]['icon'] as IconData,
+                  subCategories: categories[index]['subCategories'] ?? [],
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CategoryProductsScreen(
+                          categoryName: categories[index]['name'] as String,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               );
             },
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 }

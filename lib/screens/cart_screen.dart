@@ -218,12 +218,29 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
     final items = cartProvider.items;
+    final theme = Theme.of(context);
+    final Color lightGray = Colors.grey.shade200;
+    final Color darkGray = Colors.grey.shade600;
+    final Color blue = Colors.blue;
+    final double shippingFee = 5.0;
+    final double taxFee = cartProvider.totalAmount * 0.1;
+    final double orderTotal = cartProvider.totalAmount + shippingFee + taxFee;
+    final TextEditingController promoController = TextEditingController();
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('My Cart'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Order Review',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
       ),
       body: items.isEmpty
           ? Center(
@@ -249,7 +266,7 @@ class _CartScreenState extends State<CartScreen> {
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      backgroundColor: theme.colorScheme.primary,
                       foregroundColor: Colors.white,
                     ),
                     child: const Text('Continue Shopping'),
@@ -259,80 +276,221 @@ class _CartScreenState extends State<CartScreen> {
             )
           : Column(
               children: [
-                // Cart Items List
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (ctx, index) {
-                      final item = items[index];
-                      return CartItemWidget(
-                        item: item,
-                        onRemove: () =>
-                            cartProvider.removeItem(item.product.id),
-                        onIncrement: () =>
-                            cartProvider.increaseQuantity(item.product.id),
-                        onDecrement: () =>
-                            cartProvider.decreaseQuantity(item.product.id),
-                      );
-                    },
-                  ),
-                ),
-
-                // Order Summary
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total:',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      // Cart Items
+                      ...items.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Product Image
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  item.product.imageUrl,
+                                  width: 54,
+                                  height: 54,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                        width: 54,
+                                        height: 54,
+                                        color: lightGray,
+                                        child: const Icon(
+                                          Icons.image,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // Product Details
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          item.product.brand ?? 'Nike',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: darkGray,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Icons.verified,
+                                          color: blue,
+                                          size: 16,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      item.product.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    if (item.product.color != null ||
+                                        item.product.size != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          'Color ${item.product.color ?? ''}  Size ${item.product.size ?? ''}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: darkGray,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            '\$${cartProvider.totalAmount.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => _showCheckoutForm(context),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Checkout'),
+                      // Promo Code
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: lightGray,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: promoController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Have a promo code? Enter here',
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 10,
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text('Apply'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Order Summary
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.08),
+                              blurRadius: 12,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _summaryRow('Subtotal', cartProvider.totalAmount),
+                            const SizedBox(height: 6),
+                            _summaryRow('Shipping Fee', shippingFee),
+                            const SizedBox(height: 6),
+                            _summaryRow('Tax Fee', taxFee),
+                            const Divider(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Order Total',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Text(
+                                  ' 24${orderTotal.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
+                // Checkout Button
+                SafeArea(
+                  child: Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () => _showCheckoutForm(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Checkout  24${orderTotal.toStringAsFixed(2)}',
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
+    );
+  }
+
+  Widget _summaryRow(String label, double value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 14)),
+        Text(
+          ' 24${value.toStringAsFixed(2)}',
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+      ],
     );
   }
 }

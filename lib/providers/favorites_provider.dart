@@ -1,31 +1,38 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/product_model.dart';
 
 class FavoritesProvider with ChangeNotifier {
-  final List<ProductModel> _favorites = [];
+  final List<ProductModel> _favoriteItems = [];
 
-  List<ProductModel> get favorites => [..._favorites];
+  List<ProductModel> get favoriteItems => List.unmodifiable(_favoriteItems);
 
   bool isFavorite(ProductModel product) {
-    return _favorites.any((item) => item.id == product.id);
+    return _favoriteItems.any((item) => item.id == product.id);
   }
 
   void toggleFavorite(ProductModel product) {
     if (isFavorite(product)) {
-      _favorites.removeWhere((item) => item.id == product.id);
+      _favoriteItems.removeWhere((item) => item.id == product.id);
     } else {
-      _favorites.add(product);
+      _favoriteItems.add(product);
     }
     notifyListeners();
   }
 
-  void removeFavorite(ProductModel product) {
-    _favorites.removeWhere((item) => item.id == product.id);
+  void addToFavorites(ProductModel product) {
+    if (!isFavorite(product)) {
+      _favoriteItems.add(product);
+      notifyListeners();
+    }
+  }
+
+  void removeFromFavorites(ProductModel product) {
+    _favoriteItems.removeWhere((item) => item.id == product.id);
     notifyListeners();
   }
 
   void clearFavorites() {
-    _favorites.clear();
+    _favoriteItems.clear();
     notifyListeners();
   }
 }

@@ -34,13 +34,11 @@ class ThemeProvider with ChangeNotifier {
   // Light theme
   final ThemeData _lightTheme = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      brightness: Brightness.light,
-      secondary: secondaryColor,
-      error: errorColor,
-    ),
-    scaffoldBackgroundColor: Colors.grey.shade50,
+    primaryColor: Colors.green,
+    colorScheme: ColorScheme.fromSwatch(
+      primarySwatch: Colors.green,
+    ).copyWith(secondary: Colors.greenAccent, primary: Colors.green),
+    scaffoldBackgroundColor: const Color(0xFFE8F5E9),
     appBarTheme: AppBarTheme(
       centerTitle: true,
       backgroundColor: Colors.white,
@@ -119,13 +117,10 @@ class ThemeProvider with ChangeNotifier {
   // Dark theme
   final ThemeData _darkTheme = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      brightness: Brightness.dark,
-      secondary: secondaryColor,
-      error: errorColor,
-      surface: const Color(0xFF1E1E1E),
-    ),
+    primaryColor: Colors.green,
+    colorScheme: ColorScheme.fromSwatch(
+      primarySwatch: Colors.green,
+    ).copyWith(secondary: Colors.greenAccent, primary: Colors.green),
     scaffoldBackgroundColor: const Color(0xFF121212),
     appBarTheme: const AppBarTheme(
       centerTitle: true,

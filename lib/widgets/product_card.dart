@@ -110,38 +110,7 @@ class _ProductCardState extends State<ProductCard>
                                       : 'assets/images/products/cat${_getRandomNumber()}_${_getRandomNumber()}.png',
                                   fit: BoxFit.contain,
                                   errorBuilder: (context, error, stackTrace) {
-                                    debugPrint(
-                                      'Error loading product image: $error',
-                                    );
-                                    return Container(
-                                      color: isDarkMode
-                                          ? Colors.grey.shade800
-                                          : Colors.grey.shade200,
-                                      child: Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.image_not_supported,
-                                              color: isDarkMode
-                                                  ? Colors.grey.shade600
-                                                  : Colors.grey,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'Temporary image',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: isDarkMode
-                                                    ? Colors.grey.shade400
-                                                    : Colors.grey.shade600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
+                                    return const SizedBox.shrink();
                                   },
                                 ),
                               ),

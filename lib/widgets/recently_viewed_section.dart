@@ -109,13 +109,7 @@ class RecentlyViewedSection extends StatelessWidget {
                   product.imageUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey.shade200,
-                      child: const Icon(
-                        Icons.image_not_supported,
-                        color: Colors.grey,
-                      ),
-                    );
+                    return const SizedBox.shrink();
                   },
                 ),
               ),
@@ -154,4 +148,3 @@ class RecentlyViewedSection extends StatelessWidget {
     );
   }
 }
- 

@@ -8,11 +8,13 @@ class UserActivityProvider with ChangeNotifier {
   List<ProductModel> _recentlyViewedProducts = [];
   List<ProductModel> _recommendedProducts = [];
   bool _isLoading = true;
+  List<String> _recentSearches = [];
 
   UserActivityModel get userActivity => _userActivity;
   List<ProductModel> get recentlyViewedProducts => _recentlyViewedProducts;
   List<ProductModel> get recommendedProducts => _recommendedProducts;
   bool get isLoading => _isLoading;
+  List<String> get recentSearches => List.unmodifiable(_recentSearches);
 
   UserActivityProvider() {
     _loadUserActivity();
@@ -154,5 +156,19 @@ class UserActivityProvider with ChangeNotifier {
     _recommendedProducts = [];
     await _saveUserActivity();
     notifyListeners();
+  }
+
+  void addSearchActivity(String searchQuery) {
+    // Add search query to recent searches
+    if (!_recentSearches.contains(searchQuery)) {
+      _recentSearches.insert(0, searchQuery);
+
+      // Limit recent searches to 10 items
+      if (_recentSearches.length > 10) {
+        _recentSearches.removeLast();
+      }
+
+      notifyListeners();
+    }
   }
 }

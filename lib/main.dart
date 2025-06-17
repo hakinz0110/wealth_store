@@ -13,7 +13,7 @@ import 'providers/user_activity_provider.dart';
 import 'providers/deal_provider.dart';
 
 import 'screens/auth_screen.dart';
-import 'screens/splash_screen.dart';
+import 'screens/onboarding_splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/community_screen.dart';
@@ -22,35 +22,73 @@ import 'screens/profile_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'services/firebase_options.dart';
 
-// Initialize Firebase with platform-specific configuration
-Future<void> _initializeFirebase() async {
-  try {
-    if (kIsWeb) {
-      // Web platform
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
-    } else if (Platform.isAndroid) {
-      // Android platform
-      await Firebase.initializeApp();
-    } else if (Platform.isIOS) {
-      // iOS platform
-      await Firebase.initializeApp();
-    } else {
-      // Unsupported platform
-      debugPrint('Firebase initialization not supported on this platform');
-    }
-    debugPrint('Firebase initialized successfully');
-  } catch (e) {
-    debugPrint('Error initializing Firebase: $e');
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const SplashLogoApp());
+}
+
+class SplashLogoApp extends StatelessWidget {
+  const SplashLogoApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: const SplashLogoScreen(),
+    );
   }
 }
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+class SplashLogoScreen extends StatefulWidget {
+  const SplashLogoScreen({super.key});
 
-  // Initialize Firebase
-  await _initializeFirebase();
+  @override
+  State<SplashLogoScreen> createState() => _SplashLogoScreenState();
+}
 
-  runApp(const MyApp());
+class _SplashLogoScreenState extends State<SplashLogoScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _initApp();
+  }
+
+  Future<void> _initApp() async {
+    // Initialize Firebase in the background
+    try {
+      if (kIsWeb) {
+        await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
+      } else if (Platform.isAndroid) {
+        await Firebase.initializeApp();
+      } else if (Platform.isIOS) {
+        await Firebase.initializeApp();
+      }
+    } catch (e) {
+      debugPrint('Error initializing Firebase: $e');
+    }
+    // Wait a short moment to show the logo (optional, for smoothness)
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (mounted) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const MyApp()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Image.asset(
+          'assets/images/wealth_logo.jpg',
+          width: 160,
+          height: 160,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -76,7 +114,7 @@ class MyApp extends StatelessWidget {
             theme: themeProvider.getTheme(),
             home: const AuthWrapper(),
             routes: {
-              '/splash': (context) => const SplashScreen(),
+              '/splash': (context) => const OnboardingSplashScreen(),
               '/main': (context) => const MainScreen(),
               '/favorites': (context) => const FavoritesScreen(),
               '/search': (context) => const SearchScreen(),
@@ -122,9 +160,9 @@ class AuthWrapper extends StatelessWidget {
       );
     }
 
-    // If user is not logged in, show splash screen or auth screen
+    // If user is not logged in, show onboarding splash
     if (!authProvider.isLoggedIn) {
-      return const SplashScreen(); // Or AuthScreen if you prefer direct login
+      return const OnboardingSplashScreen();
     }
 
     // If user is logged in, show main app
@@ -144,8 +182,9 @@ class _MainScreenState extends State<MainScreen> {
 
   static const List<Widget> _screens = [
     HomeScreen(),
-    CommunityScreen(),
+    SearchScreen(),
     CartScreen(),
+    CommunityScreen(),
     ProfileScreen(),
   ];
 
@@ -160,7 +199,6 @@ class _MainScreenState extends State<MainScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        // If we're not on the home screen, go back to the home tab instead of popping
         if (_selectedIndex != 0) {
           setState(() {
             _selectedIndex = 0;
@@ -169,25 +207,38 @@ class _MainScreenState extends State<MainScreen> {
       },
       child: Scaffold(
         body: _screens[_selectedIndex],
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.forum),
-              label: 'Community',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart),
-              label: 'Cart',
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Theme.of(context).colorScheme.primary,
-          unselectedItemColor: Colors.grey,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          onTap: _onItemTapped,
+        bottomNavigationBar: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+          child: BottomNavigationBar(
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.search),
+                label: 'Search',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.shopping_cart),
+                label: 'Cart',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.forum),
+                label: 'Community',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Theme.of(context).colorScheme.primary,
+            unselectedItemColor: Colors.grey,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+            onTap: _onItemTapped,
+          ),
         ),
       ),
     );
