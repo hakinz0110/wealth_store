@@ -1,0 +1,82 @@
+[
+  {
+    "name": "iPhone 13 Pro",
+    "imageUrl": "https://i.imgur.com/XbFGYTk.jpg",
+    "price": 999.99,
+    "rating": 4.8,
+    "category": "Mobile",
+    "description": "The latest iPhone with a stunning Super Retina XDR display, A15 Bionic chip, and Pro camera system."
+  },
+  {
+    "name": "Samsung Galaxy S21",
+    "imageUrl": "https://i.imgur.com/8lHxqZJ.jpg",
+    "price": 799.99,
+    "rating": 4.7,
+    "category": "Mobile",
+    "description": "Experience next-level performance with the Samsung Galaxy S21 featuring a Dynamic AMOLED display and powerful camera system."
+  },
+  {
+    "name": "Google Pixel 6",
+    "imageUrl": "https://i.imgur.com/6oAQCgH.jpg",
+    "price": 699.99,
+    "rating": 4.6,
+    "category": "Mobile",
+    "description": "The Google Pixel 6 features Google's custom Tensor chip and an advanced camera system for incredible photos."
+  },
+  {
+    "name": "Sony WH-1000XM4",
+    "imageUrl": "https://i.imgur.com/QUKPgnm.jpg",
+    "price": 349.99,
+    "rating": 4.9,
+    "category": "Headphones",
+    "description": "Industry-leading noise cancellation with premium sound quality, smart features, and long battery life."
+  },
+  {
+    "name": "Bose QuietComfort 45",
+    "imageUrl": "https://i.imgur.com/7hTF0J2.jpg",
+    "price": 329.99,
+    "rating": 4.7,
+    "category": "Headphones",
+    "description": "Legendary noise cancellation and premium comfort with high-fidelity audio and up to 24 hours of battery life."
+  },
+  {
+    "name": "Apple AirPods Pro",
+    "imageUrl": "https://i.imgur.com/3mZnEJr.jpg",
+    "price": 249.99,
+    "rating": 4.8,
+    "category": "Headphones",
+    "description": "Active Noise Cancellation, Transparency mode, and spatial audio with dynamic head tracking for an immersive listening experience."
+  },
+  {
+    "name": "iPad Pro 12.9\"",
+    "imageUrl": "https://i.imgur.com/Y1TdB5a.jpg",
+    "price": 1099.99,
+    "rating": 4.9,
+    "category": "Tablet",
+    "description": "The ultimate iPad experience with M1 chip, Liquid Retina XDR display, and Thunderbolt connectivity."
+  },
+  {
+    "name": "Samsung Galaxy Tab S7+",
+    "imageUrl": "https://i.imgur.com/cVXHLkj.jpg",
+    "price": 849.99,
+    "rating": 4.6,
+    "category": "Tablet",
+    "description": "A versatile tablet with a stunning 12.4\" Super AMOLED display, S Pen included, and powerful performance."
+  },
+  {
+    "name": "MacBook Pro 14\"",
+    "imageUrl": "https://i.imgur.com/2YRU3AL.jpg",
+    "price": 1999.99,
+    "rating": 4.9,
+    "category": "Laptop",
+    "description": "Revolutionary Apple M1 Pro chip, stunning Liquid Retina XDR display, and all-day battery life."
+  },
+  {
+    "name": "Dell XPS 13",
+    "imageUrl": "https://i.imgur.com/9MUjLoB.jpg",
+    "price": 1299.99,
+    "rating": 4.7,
+    "category": "Laptop",
+    "description": "Compact and powerful with InfinityEdge display, 11th Gen Intel processors, and premium build quality."
+  }
+] 
