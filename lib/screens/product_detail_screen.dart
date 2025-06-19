@@ -6,6 +6,8 @@ import '../providers/favorites_provider.dart';
 import '../providers/user_activity_provider.dart';
 import '../models/review_model.dart';
 import '../widgets/reviews_section.dart';
+import '../utils/responsive.dart'; // Import responsive utilities
+import '../utils/icon_styles.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final ProductModel product;
@@ -88,6 +90,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     super.dispose();
   }
 
+  // Get responsive font size
+  double _getResponsiveFontSize(BuildContext context, double baseSize) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < 360) {
+      return baseSize * 0.8; // Smaller font for very small devices
+    } else if (screenWidth < 600) {
+      return baseSize * 0.9; // Slightly smaller font for phones
+    } else {
+      return baseSize; // Default size for larger devices
+    }
+  }
+
+  // Get responsive padding
+  EdgeInsets _getResponsivePadding(
+    BuildContext context, {
+    bool isSmall = false,
+  }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < 360) {
+      return EdgeInsets.all(isSmall ? 8.0 : 12.0);
+    } else {
+      return EdgeInsets.all(isSmall ? 12.0 : 16.0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
@@ -95,6 +122,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     final isInWishlist = favoritesProvider.isFavorite(widget.product);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final reviews = ReviewModel.getDummyReviews();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
 
     // Price range for variations
     double? minPrice, maxPrice;
@@ -121,62 +150,98 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // App bar
+            // App bar with modern design
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 12),
               height: 56,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Back button with hero animation
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(30),
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(Icons.arrow_back),
-                      ),
-                    ),
+                  // Back button with modern design
+                  ModernIconStyles.circularButton(
+                    icon: Icons.arrow_back_ios_new,
+                    onPressed: () => Navigator.of(context).pop(),
+                    context: context,
+                    size: 38,
+                    backgroundColor: isDarkMode
+                        ? Colors.grey.shade800
+                        : Colors.grey.shade100,
+                    iconColor: isDarkMode
+                        ? Colors.white
+                        : Theme.of(context).primaryColor,
                   ),
                   // Title
-                  const Text(
+                  Text(
                     'Product Details',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: _getResponsiveFontSize(context, 18),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   // Action buttons
                   Row(
                     children: [
-                      // Wishlist button with animation
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            favoritesProvider.toggleFavorite(widget.product);
-                          },
-                          borderRadius: BorderRadius.circular(30),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
-                              transitionBuilder: (child, animation) {
-                                return ScaleTransition(
-                                  scale: animation,
-                                  child: child,
+                      // Wishlist button with modern animation
+                      isInWishlist
+                          ? Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.redAccent.withOpacity(0.8),
+                                    Colors.red,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.red.withOpacity(0.3),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: GestureDetector(
+                                onTap: () {
+                                  favoritesProvider.toggleFavorite(
+                                    widget.product,
+                                  );
+                                },
+                                child: const Icon(
+                                  Icons.favorite,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                            )
+                          : ModernIconStyles.circularButton(
+                              icon: Icons.favorite_border_outlined,
+                              onPressed: () {
+                                favoritesProvider.toggleFavorite(
+                                  widget.product,
                                 );
                               },
-                              child: Icon(
-                                isInWishlist
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                key: ValueKey<bool>(isInWishlist),
-                                color: isInWishlist ? Colors.red : null,
-                              ),
+                              context: context,
+                              size: 38,
+                              backgroundColor: isDarkMode
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade100,
+                              iconColor: isDarkMode
+                                  ? Colors.white
+                                  : Colors.grey.shade700,
                             ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ],
@@ -191,7 +256,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   children: [
                     // Product image carousel
                     SizedBox(
-                      height: 300,
+                      height: isSmallScreen ? 260 : 300,
                       width: double.infinity,
                       child: Stack(
                         alignment: Alignment.bottomCenter,
@@ -206,9 +271,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             },
                             itemBuilder: (context, index) {
                               return Container(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
+                                color: isDarkMode
                                     ? Colors.grey.shade800
                                     : Colors.grey.shade100,
                                 child: Image.asset(
@@ -250,7 +313,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
                     // Product info
                     Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: _getResponsivePadding(context),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -263,8 +326,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               Expanded(
                                 child: Text(
                                   widget.product.name,
-                                  style: const TextStyle(
-                                    fontSize: 24,
+                                  style: TextStyle(
+                                    fontSize: _getResponsiveFontSize(
+                                      context,
+                                      24,
+                                    ),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -277,18 +343,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                       minPrice != null &&
                                       maxPrice != null)
                                     Text(
-                                      '\$24${minPrice.toStringAsFixed(2)} - \$24${maxPrice.toStringAsFixed(2)}',
+                                      '\$${minPrice.toStringAsFixed(2)} - \$${maxPrice.toStringAsFixed(2)}',
                                       style: TextStyle(
-                                        fontSize: 24,
+                                        fontSize: _getResponsiveFontSize(
+                                          context,
+                                          22,
+                                        ),
                                         fontWeight: FontWeight.bold,
                                         color: Theme.of(context).primaryColor,
                                       ),
                                     )
                                   else
                                     Text(
-                                      '\$24${widget.product.price.toStringAsFixed(2)}',
+                                      '\$${widget.product.price.toStringAsFixed(2)}',
                                       style: TextStyle(
-                                        fontSize: 24,
+                                        fontSize: _getResponsiveFontSize(
+                                          context,
+                                          22,
+                                        ),
                                         fontWeight: FontWeight.bold,
                                         color: Theme.of(context).primaryColor,
                                       ),
@@ -317,11 +389,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             ],
                           ),
 
-                          const SizedBox(height: 16),
+                          SizedBox(height: isSmallScreen ? 12 : 16),
 
                           // Category
                           Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding: EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 6,
                             ),
@@ -336,28 +408,51 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               style: TextStyle(
                                 color: Theme.of(context).primaryColor,
                                 fontWeight: FontWeight.bold,
+                                fontSize: _getResponsiveFontSize(context, 14),
                               ),
                             ),
                           ),
 
-                          const SizedBox(height: 24),
+                          SizedBox(height: isSmallScreen ? 16 : 24),
 
-                          // Tab bar
-                          TabBar(
-                            controller: _tabController,
-                            labelColor: Theme.of(context).primaryColor,
-                            unselectedLabelColor: isDarkMode
-                                ? Colors.grey.shade400
-                                : Colors.grey.shade600,
-                            indicatorColor: Theme.of(context).primaryColor,
-                            tabs: const [
-                              Tab(text: 'Description'),
-                              Tab(text: 'Specifications'),
-                              Tab(text: 'Reviews'),
-                            ],
+                          // Tab bar with modern design
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? Colors.grey.shade800.withOpacity(0.3)
+                                  : Colors.grey.shade200.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: TabBar(
+                              controller: _tabController,
+                              labelColor: Theme.of(context).primaryColor,
+                              unselectedLabelColor: isDarkMode
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600,
+                              indicator: BoxDecoration(
+                                color: isDarkMode
+                                    ? Theme.of(
+                                        context,
+                                      ).primaryColor.withOpacity(0.2)
+                                    : Theme.of(
+                                        context,
+                                      ).primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              dividerColor: Colors.transparent,
+                              labelStyle: TextStyle(
+                                fontSize: _getResponsiveFontSize(context, 14),
+                                fontWeight: FontWeight.bold,
+                              ),
+                              tabs: const [
+                                Tab(text: 'Description'),
+                                Tab(text: 'Specs'),
+                                Tab(text: 'Reviews'),
+                              ],
+                            ),
                           ),
 
-                          const SizedBox(height: 16),
+                          SizedBox(height: isSmallScreen ? 12 : 16),
 
                           // Tab content
                           SizedBox(
@@ -376,7 +471,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                             ? 'No description available for this product.'
                                             : widget.product.description,
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: _getResponsiveFontSize(
+                                            context,
+                                            15,
+                                          ),
                                           color: isDarkMode
                                               ? Colors.grey.shade300
                                               : Colors.grey.shade700,
@@ -446,22 +544,41 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             ),
                           ),
 
-                          const SizedBox(height: 24),
+                          SizedBox(height: isSmallScreen ? 16 : 24),
 
-                          // Similar products
-                          const Text(
-                            'Similar Products',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          // Similar products with modern header
+                          Row(
+                            children: [
+                              Container(
+                                width: 4,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Similar Products',
+                                style: TextStyle(
+                                  fontSize: _getResponsiveFontSize(context, 18),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
 
-                          const SizedBox(height: 8),
+                          SizedBox(height: isSmallScreen ? 6 : 8),
 
                           // Placeholder for similar products
-                          SizedBox(
+                          Container(
                             height: 200,
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? Colors.grey.shade800.withOpacity(0.3)
+                                  : Colors.grey.shade200.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: Center(
                               child: Text(
                                 'Similar products will appear here',
@@ -469,6 +586,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                   color: isDarkMode
                                       ? Colors.grey.shade400
                                       : Colors.grey.shade600,
+                                  fontSize: _getResponsiveFontSize(context, 14),
                                 ),
                               ),
                             ),
@@ -493,7 +611,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
             // Bottom bar with add to cart button
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: _getResponsivePadding(context, isSmall: true),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 boxShadow: [
@@ -506,85 +624,125 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               ),
               child: Row(
                 children: [
-                  // Quantity selector (placeholder)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isDarkMode
-                            ? Colors.grey.shade700
-                            : Colors.grey.shade300,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Qty: $_quantity',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+                  // Quantity selector with modern design
+                  ModernIconStyles.quantityControl(
+                    onDecrement: () {
+                      if (_quantity > 1) {
+                        setState(() {
+                          _quantity--;
+                        });
+                      }
+                    },
+                    onIncrement: () {
+                      setState(() {
+                        _quantity++;
+                      });
+                    },
+                    quantity: _quantity,
+                    context: context,
                   ),
 
-                  const SizedBox(width: 16),
+                  SizedBox(width: isSmallScreen ? 12 : 16),
 
-                  // Add to cart button
+                  // Add to cart button with modern design
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed:
-                          (widget.product.type == 'variation' &&
-                              (_selectedVariation == null ||
-                                  !_selectedVariation!.inStock))
-                          ? null
-                          : () {
-                              // For variation, add selected variation; for single, add product
-                              if (widget.product.type == 'variation' &&
-                                  _selectedVariation != null) {
-                                // You may want to pass variation info to cart
-                                cartProvider.addItem(
-                                  widget.product.copyWith(
-                                    price: _selectedVariation!.price,
-                                    color: _selectedVariation!.color,
-                                    size: _selectedVariation!.size,
-                                  ),
-                                );
-                              } else {
-                                cartProvider.addItem(widget.product);
-                              }
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    '${widget.product.name} added to cart',
-                                  ),
-                                  duration: const Duration(seconds: 2),
-                                  action: SnackBarAction(
-                                    label: 'VIEW CART',
-                                    onPressed: () {
-                                      Navigator.of(
-                                        context,
-                                      ).popUntil((route) => route.isFirst);
-                                    },
+                    child: Container(
+                      height: isSmallScreen ? 45 : 52,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).primaryColor.withOpacity(0.8),
+                            Theme.of(context).primaryColor,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap:
+                              (widget.product.type == 'variation' &&
+                                  (_selectedVariation == null ||
+                                      !_selectedVariation!.inStock))
+                              ? null
+                              : () {
+                                  // For variation, add selected variation; for single, add product
+                                  if (widget.product.type == 'variation' &&
+                                      _selectedVariation != null) {
+                                    // Add quantity times
+                                    for (int i = 0; i < _quantity; i++) {
+                                      cartProvider.addItem(
+                                        widget.product.copyWith(
+                                          price: _selectedVariation!.price,
+                                          color: _selectedVariation!.color,
+                                          size: _selectedVariation!.size,
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    // Add quantity times
+                                    for (int i = 0; i < _quantity; i++) {
+                                      cartProvider.addItem(widget.product);
+                                    }
+                                  }
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '${widget.product.name} added to cart',
+                                      ),
+                                      duration: const Duration(seconds: 2),
+                                      action: SnackBarAction(
+                                        label: 'VIEW CART',
+                                        onPressed: () {
+                                          Navigator.of(
+                                            context,
+                                          ).popUntil((route) => route.isFirst);
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                          borderRadius: BorderRadius.circular(14),
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  widget.product.type == 'variation'
+                                      ? Icons.shopping_bag_outlined
+                                      : Icons.add_shopping_cart_outlined,
+                                  color: Colors.white,
+                                  size: isSmallScreen ? 18 : 20,
+                                ),
+                                SizedBox(width: isSmallScreen ? 8 : 10),
+                                Text(
+                                  widget.product.type == 'variation'
+                                      ? 'CHECKOUT'
+                                      : 'ADD TO CART',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: _getResponsiveFontSize(
+                                      context,
+                                      16,
+                                    ),
+                                    color: Colors.white,
                                   ),
                                 ),
-                              );
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        widget.product.type == 'variation'
-                            ? 'CHECKOUT'
-                            : 'ADD TO CART',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -599,19 +757,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   Widget _buildSpecificationRow(String label, String value) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: isSmallScreen ? 6.0 : 8.0),
+      padding: EdgeInsets.all(isSmallScreen ? 8.0 : 10.0),
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? Colors.grey.shade800.withOpacity(0.3)
+            : Colors.grey.shade100.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 100,
             child: Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800,
+                fontSize: _getResponsiveFontSize(context, 14),
               ),
             ),
           ),
@@ -620,6 +787,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               value,
               style: TextStyle(
                 color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                fontSize: _getResponsiveFontSize(context, 14),
               ),
             ),
           ),
@@ -634,14 +802,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     final avatarText = review.userName.isNotEmpty
         ? review.userName[0].toUpperCase()
         : '?';
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+      margin: EdgeInsets.only(bottom: isSmallScreen ? 8 : 10),
       decoration: BoxDecoration(
         color: isDarkMode
             ? Colors.grey.shade800.withOpacity(0.3)
             : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
         ),
@@ -657,10 +827,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                 radius: 16,
                 child: Text(
                   avatarText,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: _getResponsiveFontSize(context, 12),
                   ),
                 ),
               ),
@@ -672,12 +842,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   children: [
                     Text(
                       review.userName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: _getResponsiveFontSize(context, 14),
+                      ),
                     ),
                     Text(
                       review.formattedDate,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: _getResponsiveFontSize(context, 12),
                         color: isDarkMode
                             ? Colors.grey.shade400
                             : Colors.grey.shade600,
@@ -696,7 +869,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         ? Icons.star_half
                         : Icons.star_border,
                     color: Colors.amber,
-                    size: 16,
+                    size: isSmallScreen ? 14 : 16,
                   );
                 }),
               ),
@@ -707,6 +880,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           Text(
             review.comment,
             style: TextStyle(
+              fontSize: _getResponsiveFontSize(context, 14),
               color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
             ),
           ),

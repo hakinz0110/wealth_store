@@ -56,7 +56,7 @@ class AuthProvider with ChangeNotifier {
           'email': _firebaseUser!.email ?? '',
           'address': '',
         });
-        
+
         _user = UserModel(
           id: _firebaseUser!.uid,
           name: _firebaseUser!.displayName ?? '',
@@ -198,7 +198,7 @@ class AuthProvider with ChangeNotifier {
           debugPrint('Error with popup sign-in: $e');
           // Fallback to redirect for web
           await _auth.signInWithRedirect(googleProvider);
-          // Note: Redirect will navigate away from the page, 
+          // Note: Redirect will navigate away from the page,
           // so we'll handle the result when the page loads again
           return false;
         }
@@ -296,6 +296,59 @@ class AuthProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _error = 'Error updating user address: $e';
+      debugPrint(_error);
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateUserProfile({
+    String? name,
+    String? username,
+    String? phoneNumber,
+    String? gender,
+    String? dateOfBirth,
+  }) async {
+    if (_firebaseUser == null) return false;
+
+    _isLoading = true;
+    _error = '';
+    notifyListeners();
+
+    try {
+      final Map<String, dynamic> updatedData = {};
+
+      if (name != null && name.isNotEmpty) {
+        updatedData['name'] = name;
+        // Also update the display name in Firebase Auth
+        await _firebaseUser!.updateDisplayName(name);
+      }
+
+      if (username != null) updatedData['username'] = username;
+      if (phoneNumber != null) updatedData['phoneNumber'] = phoneNumber;
+      if (gender != null) updatedData['gender'] = gender;
+      if (dateOfBirth != null) updatedData['dateOfBirth'] = dateOfBirth;
+
+      if (updatedData.isNotEmpty) {
+        await _firestore
+            .collection('users')
+            .doc(_firebaseUser!.uid)
+            .update(updatedData);
+
+        _user = _user!.copyWith(
+          name: name ?? _user!.name,
+          username: username ?? _user!.username,
+          phoneNumber: phoneNumber ?? _user!.phoneNumber,
+          gender: gender ?? _user!.gender,
+          dateOfBirth: dateOfBirth ?? _user!.dateOfBirth,
+        );
+      }
+
+      return true;
+    } catch (e) {
+      _error = 'Error updating user profile: $e';
       debugPrint(_error);
       return false;
     } finally {

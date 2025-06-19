@@ -29,6 +29,7 @@ class ProductModel {
   final String id;
   final String name;
   final String category;
+  final List<String> subcategories;
   final double price;
   final String imageUrl;
   final String description;
@@ -39,11 +40,18 @@ class ProductModel {
   final String? size;
   final String type; // 'single' or 'variation'
   final List<ProductVariation>? variations;
+  final double discountPercentage;
+  final bool isFeatured;
+  final bool isNew;
+  final bool isPopular;
+  final bool isDeal;
+  final bool isVisible;
 
   ProductModel({
     required this.id,
     required this.name,
     required this.category,
+    this.subcategories = const [],
     required this.price,
     required this.imageUrl,
     this.description = '',
@@ -54,6 +62,12 @@ class ProductModel {
     this.size,
     this.type = 'single',
     this.variations,
+    this.discountPercentage = 0.0,
+    this.isFeatured = true,
+    this.isNew = false,
+    this.isPopular = false,
+    this.isDeal = false,
+    this.isVisible = true,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -61,6 +75,9 @@ class ProductModel {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       category: json['category'] ?? '',
+      subcategories: json['subcategories'] != null
+          ? List<String>.from(json['subcategories'])
+          : [],
       price: (json['price'] ?? 0.0).toDouble(),
       imageUrl: json['imageUrl'] ?? '',
       description: json['description'] ?? '',
@@ -75,6 +92,12 @@ class ProductModel {
                 .map((v) => ProductVariation.fromJson(v))
                 .toList()
           : null,
+      discountPercentage: (json['discountPercentage'] ?? 0.0).toDouble(),
+      isFeatured: json['isFeatured'] ?? true,
+      isNew: json['isNew'] ?? false,
+      isPopular: json['isPopular'] ?? false,
+      isDeal: json['isDeal'] ?? false,
+      isVisible: json['isVisible'] ?? true,
     );
   }
 
@@ -83,6 +106,7 @@ class ProductModel {
       'id': id,
       'name': name,
       'category': category,
+      'subcategories': subcategories,
       'price': price,
       'imageUrl': imageUrl,
       'description': description,
@@ -93,6 +117,12 @@ class ProductModel {
       'size': size,
       'type': type,
       'variations': variations?.map((v) => v.toJson()).toList(),
+      'discountPercentage': discountPercentage,
+      'isFeatured': isFeatured,
+      'isNew': isNew,
+      'isPopular': isPopular,
+      'isDeal': isDeal,
+      'isVisible': isVisible,
     };
   }
 
@@ -100,6 +130,7 @@ class ProductModel {
     String? id,
     String? name,
     String? category,
+    List<String>? subcategories,
     double? price,
     String? imageUrl,
     String? description,
@@ -110,11 +141,18 @@ class ProductModel {
     String? size,
     String? type,
     List<ProductVariation>? variations,
+    double? discountPercentage,
+    bool? isFeatured,
+    bool? isNew,
+    bool? isPopular,
+    bool? isDeal,
+    bool? isVisible,
   }) {
     return ProductModel(
       id: id ?? this.id,
       name: name ?? this.name,
       category: category ?? this.category,
+      subcategories: subcategories ?? this.subcategories,
       price: price ?? this.price,
       imageUrl: imageUrl ?? this.imageUrl,
       description: description ?? this.description,
@@ -125,6 +163,12 @@ class ProductModel {
       size: size ?? this.size,
       type: type ?? this.type,
       variations: variations ?? this.variations,
+      discountPercentage: discountPercentage ?? this.discountPercentage,
+      isFeatured: isFeatured ?? this.isFeatured,
+      isNew: isNew ?? this.isNew,
+      isPopular: isPopular ?? this.isPopular,
+      isDeal: isDeal ?? this.isDeal,
+      isVisible: isVisible ?? this.isVisible,
     );
   }
 }

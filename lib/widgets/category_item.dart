@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import '../screens/subcategory_screen.dart'; // We'll create this screen
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CategoryItem extends StatelessWidget {
   final String name;
   final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
-
-  // Make subCategories more flexible
   final dynamic subCategories;
+  final Color? accentColor;
+  final String? imageUrl; // New property for image-based categories
 
   const CategoryItem({
     super.key,
@@ -17,17 +18,21 @@ class CategoryItem extends StatelessWidget {
     this.isSelected = false,
     required this.onTap,
     this.subCategories,
+    this.accentColor,
+    this.imageUrl, // Add imageUrl parameter
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 80,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final defaultAccentColor = const Color(0xFF6518F4);
+    final iconColor = accentColor ?? defaultAccentColor;
+
+    return SizedBox(
+      width: 85,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
         children: [
           Material(
             color: Colors.transparent,
@@ -40,9 +45,7 @@ class CategoryItem extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => SubcategoryScreen(
                         categoryName: name,
-                        subCategories: subCategories is List
-                            ? subCategories
-                            : [subCategories],
+                        subCategories: subCategories,
                       ),
                     ),
                   );
@@ -50,48 +53,87 @@ class CategoryItem extends StatelessWidget {
                   onTap();
                 }
               },
-              splashColor: const Color(0xFF6518F4).withOpacity(0.2),
-              highlightColor: const Color(0xFF6518F4).withOpacity(0.1),
-              hoverColor: const Color(0xFF6518F4).withOpacity(0.05),
+              splashColor: iconColor.withOpacity(0.2),
+              highlightColor: iconColor.withOpacity(0.1),
+              hoverColor: iconColor.withOpacity(0.05),
               child: Ink(
                 height: 70,
                 width: 70,
                 decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: [iconColor.withOpacity(0.7), iconColor],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
                   color: isSelected
-                      ? const Color(0xFF6518F4).withOpacity(0.1)
+                      ? null
+                      : isDarkMode
+                      ? Colors.grey.shade800
                       : Colors.grey.shade100,
                   shape: BoxShape.circle,
-                  border: isSelected
-                      ? Border.all(color: const Color(0xFF6518F4), width: 2)
-                      : null,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      color: isSelected
+                          ? iconColor.withOpacity(0.3)
+                          : Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
                 child: Center(
-                  child: Icon(
-                    icon,
-                    color: isSelected
-                        ? const Color(0xFF6518F4)
-                        : Colors.grey.shade700,
-                    size: 35,
-                  ),
+                  // Use either network image or icon
+                  child: imageUrl != null && imageUrl!.isNotEmpty
+                      ? ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: imageUrl!,
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: iconColor,
+                                ),
+                            errorWidget: (context, url, error) => Icon(
+                              icon,
+                              color: isSelected
+                                  ? Colors.white
+                                  : isDarkMode
+                                  ? Colors.white
+                                  : iconColor,
+                              size: 32,
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          icon,
+                          color: isSelected
+                              ? Colors.white
+                              : isDarkMode
+                              ? Colors.white
+                              : iconColor,
+                          size: 32,
+                        ),
                 ),
               ),
             ),
           ),
           const SizedBox(height: 8),
-          Center(
+          SizedBox(
+            height: 15,
             child: Text(
               name,
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFF6518F4) : Colors.black87,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected
+                    ? iconColor
+                    : isDarkMode
+                    ? Colors.white
+                    : Colors.black87,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

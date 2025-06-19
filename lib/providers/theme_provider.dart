@@ -6,8 +6,13 @@ class ThemeProvider with ChangeNotifier {
   bool get isDarkMode => _isDarkMode;
 
   // Primary brand color
-  static const Color primaryColor = Color(0xFF6518F4);
+  static const Color primaryColor = Color(
+    0xFF4B69FF,
+  ); // Blue color from the profile screenshot
   static const Color secondaryColor = Color(0xFF03DAC6);
+  static const Color accentColor = Color(
+    0xFFAB8DF2,
+  ); // Purple accent for dark mode
   static const Color errorColor = Color(0xFFB00020);
 
   ThemeProvider() {
@@ -34,11 +39,12 @@ class ThemeProvider with ChangeNotifier {
   // Light theme
   final ThemeData _lightTheme = ThemeData(
     useMaterial3: true,
-    primaryColor: Colors.green,
-    colorScheme: ColorScheme.fromSwatch(
-      primarySwatch: Colors.green,
-    ).copyWith(secondary: Colors.greenAccent, primary: Colors.green),
-    scaffoldBackgroundColor: const Color(0xFFE8F5E9),
+    primaryColor: primaryColor,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      brightness: Brightness.light,
+    ),
+    scaffoldBackgroundColor: const Color(0xFFF5F7FA),
     appBarTheme: AppBarTheme(
       centerTitle: true,
       backgroundColor: Colors.white,
@@ -114,17 +120,18 @@ class ThemeProvider with ChangeNotifier {
     ),
   );
 
-  // Dark theme
+  // Dark theme - elegant dark theme similar to admin app
   final ThemeData _darkTheme = ThemeData(
     useMaterial3: true,
-    primaryColor: Colors.green,
-    colorScheme: ColorScheme.fromSwatch(
-      primarySwatch: Colors.green,
-    ).copyWith(secondary: Colors.greenAccent, primary: Colors.green),
-    scaffoldBackgroundColor: const Color(0xFF121212),
+    primaryColor: primaryColor,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      brightness: Brightness.dark,
+    ),
+    scaffoldBackgroundColor: const Color(0xFF121212), // Deep dark background
     appBarTheme: const AppBarTheme(
       centerTitle: true,
-      backgroundColor: Color(0xFF1E1E1E),
+      backgroundColor: Color(0xFF1A1A1A), // Slightly lighter than background
       elevation: 0,
       iconTheme: IconThemeData(color: Colors.white),
       titleTextStyle: TextStyle(
@@ -133,7 +140,7 @@ class ThemeProvider with ChangeNotifier {
         fontWeight: FontWeight.bold,
       ),
     ),
-    cardColor: const Color(0xFF242424),
+    cardColor: const Color(0xFF1E1E1E), // Slightly lighter than background
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
@@ -145,15 +152,15 @@ class ThemeProvider with ChangeNotifier {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFFAB8DF2),
-        side: const BorderSide(color: Color(0xFFAB8DF2)),
+        foregroundColor: accentColor,
+        side: const BorderSide(color: accentColor),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFFAB8DF2),
+        foregroundColor: accentColor,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -167,13 +174,13 @@ class ThemeProvider with ChangeNotifier {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFAB8DF2)),
+        borderSide: const BorderSide(color: accentColor),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Color(0xFF1E1E1E),
-      selectedItemColor: Color(0xFFAB8DF2),
+      backgroundColor: Color(0xFF1A1A1A),
+      selectedItemColor: accentColor, // Use accent color for selection
       unselectedItemColor: Colors.grey,
       elevation: 8,
       type: BottomNavigationBarType.fixed,
@@ -193,6 +200,49 @@ class ThemeProvider with ChangeNotifier {
       color: Color(0xFF2A2A2A),
       thickness: 1,
       space: 24,
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: MaterialStateProperty.resolveWith<Color>((states) {
+        if (states.contains(MaterialState.selected)) {
+          return accentColor;
+        }
+        return Colors.grey;
+      }),
+      trackColor: MaterialStateProperty.resolveWith<Color>((states) {
+        if (states.contains(MaterialState.selected)) {
+          return accentColor.withOpacity(0.5);
+        }
+        return Colors.grey.withOpacity(0.5);
+      }),
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: MaterialStateProperty.resolveWith<Color>((states) {
+        if (states.contains(MaterialState.selected)) {
+          return accentColor;
+        }
+        return Colors.grey;
+      }),
+    ),
+    radioTheme: RadioThemeData(
+      fillColor: MaterialStateProperty.resolveWith<Color>((states) {
+        if (states.contains(MaterialState.selected)) {
+          return accentColor;
+        }
+        return Colors.grey;
+      }),
+    ),
+    snackBarTheme: const SnackBarThemeData(
+      backgroundColor: Color(0xFF2A2A2A),
+      contentTextStyle: TextStyle(color: Colors.white),
+    ),
+    dialogTheme: const DialogThemeData(
+      backgroundColor: Color(0xFF1E1E1E),
+      titleTextStyle: TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+      contentTextStyle: TextStyle(color: Colors.white70),
     ),
   );
 }

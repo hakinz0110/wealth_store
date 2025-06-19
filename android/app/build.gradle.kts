@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.wealth.app.wealth_store"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35 // Updated to explicitly target API 35 for plugin compatibility
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -26,10 +26,10 @@ android {
         applicationId = "com.wealth.app.wealth_store"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        minSdk = 21 // Keeping minSdk at 21 to support older devices
+        targetSdk = 34 // Targeting API 34 (Android 14) to meet Play Store requirements
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     buildTypes {
