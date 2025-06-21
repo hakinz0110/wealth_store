@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../utils/responsive.dart';
 import '../providers/product_provider.dart';
 import '../providers/cart_provider.dart';
@@ -30,6 +31,7 @@ import 'subcategory_screen.dart';
 import 'category_products_screen.dart';
 import 'category_tab_screen.dart';
 import 'cart_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,31 +43,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   String _selectedNavSection = 'featured';
-
-  // Sample banner data
-  final List<BannerItem> banners = [
-    BannerItem(
-      title: 'New Collection',
-      description: 'Discount 30% for first transaction',
-      buttonText: 'Shop Now',
-      backgroundColor: const Color(0xFF6518F4),
-      imageUrl: 'assets/images/products/cat2_1.png',
-    ),
-    BannerItem(
-      title: 'Summer Sale',
-      description: 'Up to 50% off on selected items',
-      buttonText: 'View Offers',
-      backgroundColor: const Color(0xFF2E7D32),
-      imageUrl: 'assets/images/products/loptop2.png',
-    ),
-    BannerItem(
-      title: 'Tech Deals',
-      description: 'Latest gadgets at special prices',
-      buttonText: 'Explore',
-      backgroundColor: const Color(0xFF1565C0),
-      imageUrl: 'assets/images/products/cat3_3.png',
-    ),
-  ];
+  List<BannerItem> _banners = [];
+  bool _isLoadingBanners = true;
+  StreamSubscription<QuerySnapshot>? _bannersSubscription;
 
   // Tab items
   final List<Map<String, dynamic>> _tabs = [
@@ -86,6 +66,115 @@ class _HomeScreenState extends State<HomeScreen> {
     // Only fetch products if they haven't been loaded yet
     if (productProvider.products.isEmpty) {
       productProvider.fetchProducts();
+    }
+
+    // Fetch banners from Firestore
+    _fetchBanners();
+  }
+
+  @override
+  void dispose() {
+    // Cancel the subscription when the widget is disposed
+    _bannersSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _fetchBanners() {
+    setState(() {
+      _isLoadingBanners = true;
+    });
+
+    try {
+      // Create a real-time stream for all banners (removed isActive filter), ordered by the order field
+      final bannersStream = FirebaseFirestore.instance
+          .collection('banners')
+          // Temporarily remove the active filter to see all banners
+          // .where('isActive', isEqualTo: true)
+          .orderBy('order')
+          .snapshots();
+
+      print('Setting up banners stream...');
+
+      // Subscribe to the stream
+      _bannersSubscription = bannersStream.listen(
+        (snapshot) {
+          // Debug information
+          print(
+            'Banner snapshot received with ${snapshot.docs.length} documents',
+          );
+          for (var doc in snapshot.docs) {
+            print(
+              'Banner: ${doc.id} - ${doc.data()['title']} - Active: ${doc.data()['isActive']}',
+            );
+          }
+
+          // Convert all documents to BannerItem objects (including inactive ones for debugging)
+          final fetchedBanners = snapshot.docs.map((doc) {
+            final data = doc.data();
+            // Parse color from hex string
+            final colorHex = data['backgroundColor'] as String? ?? '#6518F4';
+            final color = Color(
+              int.parse(colorHex.substring(1), radix: 16) + 0xFF000000,
+            );
+
+            return BannerItem(
+              title: data['title'] ?? '',
+              description: data['description'] ?? '',
+              buttonText: data['buttonText'] ?? 'Shop Now',
+              backgroundColor: color,
+              imageUrl: data['imageUrl'] ?? 'assets/images/products/cat2_1.png',
+            );
+          }).toList();
+
+          // Update state with the fetched banners
+          if (mounted) {
+            setState(() {
+              _banners = fetchedBanners;
+              _isLoadingBanners = false;
+              print('Updated banners list with ${_banners.length} banners');
+            });
+          }
+        },
+        onError: (error) {
+          print('Error streaming banners: $error');
+          _setDefaultBanners();
+        },
+      );
+    } catch (e) {
+      print('Error setting up banners stream: $e');
+      _setDefaultBanners();
+    }
+  }
+
+  void _setDefaultBanners() {
+    // Fallback to default banners if there's an error
+    if (mounted) {
+      setState(() {
+        _banners = [
+          BannerItem(
+            title: 'New Collection',
+            description: 'Discount 30% for first transaction',
+            buttonText: 'Shop Now',
+            backgroundColor: const Color(0xFF6518F4),
+            imageUrl: 'assets/images/products/cat2_1.png',
+          ),
+          BannerItem(
+            title: 'Summer Sale',
+            description: 'Up to 50% off on selected items',
+            buttonText: 'View Offers',
+            backgroundColor: const Color(0xFF2E7D32),
+            imageUrl: 'assets/images/products/loptop2.png',
+          ),
+          BannerItem(
+            title: 'Tech Deals',
+            description: 'Latest gadgets at special prices',
+            buttonText: 'Explore',
+            backgroundColor: const Color(0xFF1565C0),
+            imageUrl: 'assets/images/products/cat3_3.png',
+          ),
+        ];
+        _isLoadingBanners = false;
+      });
     }
   }
 
@@ -341,8 +430,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBannerCarousel() {
+    if (_isLoadingBanners) {
+      return const SizedBox(
+        height: 250,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_banners.isEmpty) {
+      return const SizedBox.shrink(); // Hide if no banners
+    }
+
     return BannerCarousel(
-      banners: banners,
+      banners: _banners,
       onBannerTap: (index) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -209,13 +209,7 @@ class _BannerCarouselState extends State<BannerCarousel>
                             // Image
                             Expanded(
                               flex: 2,
-                              child: Image.asset(
-                                banner.imageUrl,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const SizedBox.shrink();
-                                },
-                              ),
+                              child: _buildBannerImage(banner.imageUrl),
                             ),
                           ],
                         ),
@@ -254,6 +248,41 @@ class _BannerCarouselState extends State<BannerCarousel>
         ),
       ],
     );
+  }
+
+  Widget _buildBannerImage(String imageUrl) {
+    if (imageUrl.startsWith('http')) {
+      // Network image
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          print('Error loading network image: $error');
+          return const Icon(Icons.image, color: Colors.white54, size: 60);
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          );
+        },
+      );
+    } else {
+      // Asset image
+      return Image.asset(
+        imageUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          print('Error loading asset image: $error');
+          return const Icon(Icons.image, color: Colors.white54, size: 60);
+        },
+      );
+    }
   }
 }
 
