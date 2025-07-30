@@ -1,0 +1,10 @@
+{
+  "context": [
+    "prd.md",
+    "prompt_guide.txt"
+  ],
+  "notes": [
+    "This project uses Flutter 3.22.0 — all generated code must be 100% compatible with this version."
+  ]
+}
+

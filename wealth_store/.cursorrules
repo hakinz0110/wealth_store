@@ -1,0 +1,130 @@
+{
+  "cursor_version": "1.0",
+  "context": {
+    "flutter_version": "3.22.0",
+    "project_type": "Flutter eCommerce App",
+    "description": "Production-ready eCommerce mobile app with Supabase backend and modern UI",
+    "tech_stack": [
+      "Flutter",
+      "Supabase",
+      "Riverpod",
+      "go_router",
+      "flutter_hooks",
+      "flutter_animate",
+      "shimmer",
+      "motion",
+      "responsive_framework"
+    ]
+  },
+  "dependencies": [
+    "supabase_flutter",
+    "flutter_riverpod",
+    "riverpod_annotation",
+    "go_router",
+    "flutter_hooks",
+    "flutter_animate",
+    "shimmer",
+    "motion",
+    "responsive_framework",
+    "flutter_svg",
+    "cached_network_image",
+    "flutter_secure_storage",
+    "shared_preferences",
+    "image_picker",
+    "permission_handler",
+    "connectivity_plus",
+    "package_info_plus"
+  ],
+  "dev_dependencies": [
+    "flutter_test",
+    "flutter_lints",
+    "riverpod_generator",
+    "build_runner",
+    "json_serializable",
+    "json_annotation"
+  ],
+  "rules": [
+    {
+      "pattern": "@freezed",
+      "check": {
+        "requiresMethod": "fromJson",
+        "error": "Missing factory `fromJson` in @freezed model. This is required for serialization."
+      }
+    },
+    {
+      "pattern": "part '.*\\.g\\.dart';",
+      "error": "Missing 'part \\'.g.dart\'' directive. Required for code generation."
+    },
+    {
+      "pattern": "part of '.*';",
+      "error": "Missing 'part of' directive in Freezed model or code-split file."
+    },
+    {
+      "pattern": "CustomTextField",
+      "check": {
+        "requiresNamedParameter": "hintText",
+        "error": "hintText is required in CustomTextField to prevent InputDecoration error."
+      }
+    },
+    {
+      "pattern": "Future<AuthResponse>",
+      "check": {
+        "disallowReturn": "bool",
+        "error": "Invalid return type: Expected AuthResponse, but returned bool."
+      }
+    },
+    {
+      "pattern": "import .*auth_state\\.dart",
+      "check": {
+        "aliasIfConflict": true,
+        "error": "Multiple AuthState imports detected. Use aliases to avoid conflict."
+      }
+    },
+    {
+      "pattern": "AuthException",
+      "check": {
+        "aliasIfConflict": true,
+        "error": "Multiple AuthException classes detected. Use alias (e.g., AppAuthException)."
+      }
+    },
+    {
+      "pattern": "@riverpod",
+      "check": {
+        "requiresExtends": "_\$",
+        "error": "Riverpod generator class must extend '_\$ClassName'."
+      }
+    },
+    {
+      "pattern": "ElevatedButton",
+      "check": {
+        "recommendStyleBuilder": true,
+        "error": "ElevatedButton should use a consistent style builder for theme consistency."
+      }
+    },
+    {
+      "pattern": "CachedNetworkImage",
+      "check": {
+        "mustUsePlaceholderAndErrorWidget": true,
+        "error": "CachedNetworkImage must use a placeholder and errorWidget."
+      }
+    },
+    {
+      "pattern": "async.*=>.*\\.then",
+      "check": {
+        "preferAwaitOverThen": true,
+        "error": "Use async/await instead of .then() for better readability and error handling."
+      }
+    },
+    {
+      "pattern": "\.dispose\(\)",
+      "check": {
+        "mustCallSuper": true,
+        "error": "Always call super.dispose() when overriding dispose method."
+      }
+    }
+  ],
+  "post_build_success": {
+    "appendToFile": "progress.md",
+    "content": "- [x] Build completed and common pitfalls verified with .cursorrules\n"
+  }
+}

@@ -1,0 +1,66 @@
+# Stage 1: Project Initialization
+Initialize a new Flutter project with all dependencies in the PRD (pubspec.yaml). 
+Set up Supabase connection using environment variables. Configure folder structure and global themes.
+
+
+# Stage 2: Supabase Backend Setup
+Create Supabase tables and storage buckets as defined in the PRD (users, products, orders, etc.).
+Enable Row Level Security (RLS) policies and test Flutter connectivity.
+
+
+
+# Stage 3: Authentication Module
+Implement splash and onboarding. Create register, login, forgot password with Supabase Auth.
+Use Riverpod for auth state and Google sign-in where applicable.
+
+
+
+# Stage 4: Main Navigation Framework
+Setup routing using go_router. Implement top headbar and bottom navbar.
+Ensure all screens are route-accessible and responsive across breakpoints.
+
+
+# Stage 5: Product Core
+Build Product Listing and Product Details screens. Fetch products from Supabase.
+Add filters, add-to-cart, and wishlist toggle with real data.
+
+
+# Stage 6: Cart & Checkout Flow
+Create Cart and Checkout screens with subtotal, shipping, and address forms.
+Use Supabase to manage cart items and create orders.
+
+
+# Stage 7: Orders Module
+Build Order Confirmation, My Orders, and Order Details pages. 
+Enable order tracking via Supabase subscriptions.
+
+
+
+# Stage 8: Account & Profile Management
+Implement Profile screen with avatar upload, editable info, and settings.
+Enable address management and theme/language toggle.
+
+
+
+# Stage 9: Discovery & Engagement
+Build Search, Favorites, Feed, and Notifications screen. 
+Support voice search, wishlist sharing, and promotional feed.
+
+
+
+# Stage 10: UI/UX Design System
+Create shared UI components like Buttons, Cards, Input Fields.
+Integrate animations, shimmer effects, and loading indicators.
+
+# Stage 11: Performance Optimization
+Add image optimization from Supabase CDN and caching with cached_network_image.
+Implement infinite scroll and pagination.
+
+
+# Stage 12: Testing, Analytics & Deployment
+Write unit, integration, and widget tests.
+Add Firebase Performance Monitoring and Analytics.
+Configure Android/iOS build files and environment setup.
+
+
+

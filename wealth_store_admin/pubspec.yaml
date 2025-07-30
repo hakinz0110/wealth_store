@@ -1,0 +1,80 @@
+name: wealth_store_admin
+description: "A new Flutter project."
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.0
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  
+  # Supabase integration
+  supabase_flutter: ^2.8.0
+  
+  # State management
+  hooks_riverpod: ^2.6.1
+  flutter_hooks: ^0.20.5
+  
+  # UI components
+  data_table_2: ^2.5.15
+  responsive_framework: ^1.5.1
+  flutter_svg: ^2.0.10+1
+  
+  # File handling
+  file_picker: ^8.1.4
+  image_picker: ^1.1.2
+  flutter_dropzone: ^4.0.1
+  
+  # Charts and analytics
+  fl_chart: ^0.69.2
+  
+  # Utilities
+  fluttertoast: ^8.2.8
+  intl: ^0.19.0
+  
+  # Navigation
+  go_router: ^14.6.2
+  
+  # PDF generation (for reports)
+  pdf: ^3.11.1
+  printing: ^5.13.4
+  
+  # Animation
+  flutter_animate: ^4.5.0
+  
+  # HTTP requests
+  http: ^1.2.2
+  
+  # Image caching
+  cached_network_image: ^3.3.0
+  
+  # CSV handling
+  csv: ^6.0.0
+  
+  # Deep linking
+  app_links: ^6.3.2
+  
+  # Local storage and caching
+  shared_preferences: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+  
+  # Testing dependencies
+  mockito: ^5.4.4
+  build_runner: ^2.4.13
+
+flutter:
+
+  uses-material-design: true
+
