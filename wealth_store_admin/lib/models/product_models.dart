@@ -98,6 +98,7 @@ class Product {
   }
 
   // Helper getters
+  String? get imageUrl => imageUrls.isNotEmpty ? imageUrls.first : null;
   bool get isLowStock => stock <= 10;
   bool get isOutOfStock => stock <= 0;
   String get primaryImageUrl => imageUrls.isNotEmpty ? imageUrls.first : '';

@@ -214,4 +214,102 @@ class SanitizationUtils {
     
     return sanitized;
   }
+}  //
+/ Sanitizes integer input
+  static int? sanitizeInteger(String? input) {
+    if (input == null || input.isEmpty) return null;
+    final sanitized = input.replaceAll(RegExp(r'[^0-9-]'), '');
+    return int.tryParse(sanitized);
+  }
+
+  /// Sanitizes UUID input
+  static String? sanitizeUuid(String? input) {
+    if (input == null || input.isEmpty) return null;
+    final uuidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+    return uuidRegex.hasMatch(input) ? input : null;
+  }
+
+  /// Sanitizes boolean input
+  static bool? sanitizeBoolean(String? input) {
+    if (input == null || input.isEmpty) return null;
+    final lower = input.toLowerCase();
+    if (lower == 'true' || lower == '1') return true;
+    if (lower == 'false' || lower == '0') return false;
+    return null;
+  }
+
+  /// Sanitizes user role input
+  static String? sanitizeUserRole(String? input) {
+    if (input == null || input.isEmpty) return null;
+    const validRoles = ['admin', 'customer', 'moderator'];
+    final sanitized = input.toLowerCase();
+    return validRoles.contains(sanitized) ? sanitized : null;
+  }
+
+  /// Sanitizes order status input
+  static String? sanitizeOrderStatus(String? input) {
+    if (input == null || input.isEmpty) return null;
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled', 'refunded'];
+    final sanitized = input.toLowerCase();
+    return validStatuses.contains(sanitized) ? sanitized : null;
+  }
+
+  /// Sanitizes shipping address
+  static Map<String, String>? sanitizeShippingAddress(Map<String, dynamic>? input) {
+    if (input == null) return null;
+    final sanitized = <String, String>{};
+    
+    for (final entry in input.entries) {
+      if (entry.value is String) {
+        sanitized[entry.key] = sanitizeInput(entry.value as String);
+      }
+    }
+    
+    return sanitized;
+  }
+
+  /// Sanitizes banner title
+  static String? sanitizeBannerTitle(String? input) {
+    if (input == null || input.isEmpty) return null;
+    return sanitizeInput(input).substring(0, input.length > 100 ? 100 : input.length);
+  }
+
+  /// Sanitizes date string
+  static String? sanitizeDateString(String? input) {
+    if (input == null || input.isEmpty) return null;
+    try {
+      final date = DateTime.parse(input);
+      return date.toIso8601String();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Sanitizes email input
+  static String? sanitizeEmail(String? input) {
+    if (input == null || input.isEmpty) return null;
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    final sanitized = sanitizeInput(input);
+    return emailRegex.hasMatch(sanitized) ? sanitized : null;
+  }
+
+  /// Sanitizes username input
+  static String? sanitizeUsername(String? input) {
+    if (input == null || input.isEmpty) return null;
+    final sanitized = input.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '');
+    return sanitized.length >= 3 ? sanitized : null;
+  }
+
+  /// Sanitizes storage path
+  static String? sanitizeStoragePath(String? input) {
+    if (input == null || input.isEmpty) return null;
+    return input.replaceAll(RegExp(r'[^a-zA-Z0-9/._-]'), '');
+  }
+
+  /// Sanitizes MIME type
+  static String? sanitizeMimeType(String? input) {
+    if (input == null || input.isEmpty) return null;
+    final mimeRegex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_.]*$');
+    return mimeRegex.hasMatch(input) ? input : null;
+  }
 }

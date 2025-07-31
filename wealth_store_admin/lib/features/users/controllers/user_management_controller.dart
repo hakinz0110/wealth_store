@@ -19,7 +19,7 @@ class UserManagementController {
   Future<List<models.User>> getUsers({
     int page = 1,
     int limit = 20,
-    UserFilters? filters,
+    models.UserFilters? filters,
   }) async {
     try {
       Logger.info('Fetching users - Page: $page, Limit: $limit');
@@ -236,7 +236,7 @@ class UserManagementController {
   }
 
   /// Get user statistics
-  Future<UserStatistics> getUserStatistics({DateTime? startDate, DateTime? endDate}) async {
+  Future<models.UserStatistics> getUserStatistics({DateTime? startDate, DateTime? endDate}) async {
     try {
       Logger.info('Fetching user statistics');
       return await _userService.getUserStatistics(

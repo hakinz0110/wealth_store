@@ -479,4 +479,31 @@ class ValidationUtils {
     
     return html;
   }
+} 
+ /// Validates search query
+  static String? validateSearchQuery(String? query) {
+    if (query == null || query.isEmpty) {
+      return 'Search query cannot be empty';
+    }
+    
+    if (query.length < 2) {
+      return 'Search query must be at least 2 characters long';
+    }
+    
+    if (query.length > 100) {
+      return 'Search query cannot exceed 100 characters';
+    }
+    
+    // Check for potentially dangerous patterns
+    final dangerousPatterns = ['<script', 'javascript:', 'data:', 'vbscript:'];
+    final lowerQuery = query.toLowerCase();
+    
+    for (final pattern in dangerousPatterns) {
+      if (lowerQuery.contains(pattern)) {
+        return 'Search query contains invalid characters';
+      }
+    }
+    
+    return null;
+  }
 }

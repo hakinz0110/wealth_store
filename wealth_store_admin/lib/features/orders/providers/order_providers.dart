@@ -109,4 +109,26 @@ final orderDetailsProvider = FutureProvider.family<Order?, String>((ref, orderId
 // Order filters provider
 final orderFiltersProvider = StateProvider<OrderFilters>((ref) {
   return const OrderFilters();
+});/
+/ Order CRUD operations provider
+final orderCrudProvider = Provider<OrderService>((ref) {
+  return ref.watch(orderServiceProvider);
+});
+
+// Paginated orders provider
+final paginatedOrdersProvider = StateNotifierProvider<OrdersNotifier, AsyncValue<List<Order>>>((ref) {
+  final orderService = ref.watch(orderServiceProvider);
+  return OrdersNotifier(orderService);
+});
+
+// Order by ID provider
+final orderByIdProvider = FutureProvider.family<Order?, String>((ref, orderId) async {
+  final orderService = ref.watch(orderServiceProvider);
+  return await orderService.getOrderById(orderId);
+});
+
+// Recent orders provider
+final recentOrdersProvider = FutureProvider<List<Order>>((ref) async {
+  final orderService = ref.watch(orderServiceProvider);
+  return await orderService.getRecentOrders(limit: 10);
 });

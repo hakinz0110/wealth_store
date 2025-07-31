@@ -95,8 +95,8 @@ class ErrorHandler {
       );
     }
     
-    // Default to generic app exception
-    return AppException(
+    // Default to generic network exception
+    return NetworkException(
       'An unexpected error occurred. Please try again.',
       code: 'UNKNOWN_ERROR',
       originalError: error,
@@ -107,7 +107,7 @@ class ErrorHandler {
   // RealtimeError handling removed as it's deprecated in newer Supabase versions
   
   /// Handle Supabase Auth exceptions
-  static AuthenticationException _handleAuthException(
+  static AppException _handleAuthException(
     AuthException error, 
     StackTrace? stackTrace,
   ) {
@@ -121,7 +121,7 @@ class ErrorHandler {
   }
   
   /// Handle Supabase Postgrest (database) exceptions
-  static DatabaseException _handlePostgrestException(
+  static AppException _handlePostgrestException(
     PostgrestException error, 
     StackTrace? stackTrace,
   ) {
@@ -190,7 +190,7 @@ class ErrorHandler {
   }
   
   /// Handle Supabase Storage exceptions
-  static NetworkException _handleStorageException(
+  static AppException _handleStorageException(
     StorageException error, 
     StackTrace? stackTrace,
   ) {
@@ -498,7 +498,7 @@ extension FutureErrorHandling<T> on Future<T> {
       return await this;
     } catch (error, stackTrace) {
       final appError = ErrorHandler.handleError(error, stackTrace);
-      final customError = AppException(
+      final customError = NetworkException(
         errorMessage,
         code: appError.code,
         originalError: appError,
@@ -540,7 +540,7 @@ extension FutureErrorHandling<T> on Future<T> {
     }
     
     // This should never be reached due to the rethrow above
-    throw lastError ?? AppException('Operation failed after $maxAttempts attempts');
+    throw lastError ?? NetworkException('Operation failed after $maxAttempts attempts');
   }
 }
 

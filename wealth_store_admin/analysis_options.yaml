@@ -6,5 +6,3 @@ linter:
     # Disable some rules that are too strict for development
     avoid_print: false
     prefer_single_quotes: true
-    # Disable deprecated member warnings during migration
-    deprecated_member_use: false
